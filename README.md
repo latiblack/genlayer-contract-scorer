@@ -87,10 +87,17 @@ You'll get back a contract address and transaction hash.
 
 **5. Score a contract**
 
-`score_contract` is a write method (it updates state), so use `genlayer write`:
+`score_contract` is a write method (it updates state), so use `genlayer write`.
 
+**Bash / macOS / Linux:**
 ```bash
 genlayer write <contract_address> score_contract --args "[\"$(cat examples/bank_vault.py)\"]"
+```
+
+**PowerShell (Windows):**
+```powershell
+$src = Get-Content examples/bank_vault.py -Raw
+genlayer write <contract_address> score_contract --args "[$($src | ConvertTo-Json)]"
 ```
 
 **6. Read the result**
