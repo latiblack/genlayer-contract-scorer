@@ -14,16 +14,25 @@ const REPO_ROOT = path.join(__dirname, '..');
 const jobs = new Map();
 
 function parseScoreResult(raw) {
-  const result = { raw, overall: null, quality: null, security: null, vulnerabilities: [] };
+  // genlayer call may wrap the return value in JSON quotes with escaped \n
+  let text = raw.trim();
+  if ((text.startsWith('"') && text.endsWith('"')) ||
+      (text.startsWith("'") && text.endsWith("'"))) {
+    try { text = JSON.parse(text); } catch { /* leave as-is */ }
+  }
+  // Normalise literal \n sequences into real newlines
+  text = text.replace(/\\n/g, '\n').trim();
 
-  const m = raw.match(/Overall:\s*(\d+)\s*\|\s*Quality:\s*(\d+)\s*\|\s*Security:\s*(\d+)/i);
+  const result = { raw: text, overall: null, quality: null, security: null, vulnerabilities: [] };
+
+  const m = text.match(/Overall:\s*(\d+)\s*\|\s*Quality:\s*(\d+)\s*\|\s*Security:\s*(\d+)/i);
   if (m) {
     result.overall  = parseInt(m[1]);
     result.quality  = parseInt(m[2]);
     result.security = parseInt(m[3]);
   }
 
-  result.vulnerabilities = (raw.match(/\[(CRITICAL|MEDIUM|LOW)\][^\n]+/gi) || [])
+  result.vulnerabilities = (text.match(/\[(CRITICAL|MEDIUM|LOW)\][^\n]*/gi) || [])
     .map(line => {
       const v = line.match(/\[(CRITICAL|MEDIUM|LOW)\]\s*(.+)/i);
       return v ? { severity: v[1].toLowerCase(), description: v[2].trim() } : null;
@@ -122,6 +131,10 @@ app.get('/api/stream/:jobId', (req, res) => {
     call.on('close', callCode => {
       if (callCode !== 0) {
         send('error', { message: `genlayer call exited with code ${callCode}` });
+        return res.end();
+      }
+      if (!callOutput.trim()) {
+        send('error', { message: 'genlayer call returned empty output — transaction may not be finalised yet. Try "Refresh result" in a few seconds.' });
         return res.end();
       }
       send('result', { data: parseScoreResult(callOutput) });

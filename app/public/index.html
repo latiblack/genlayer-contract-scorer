@@ -39,10 +39,8 @@
       padding: 14px 28px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 16px;
+      gap: 12px;
     }
-    .header-left { display: flex; align-items: center; gap: 12px; }
     .logo {
       width: 34px; height: 34px;
       background: var(--primary);
@@ -53,7 +51,7 @@
     header h1 { font-size: 16px; font-weight: 600; }
     header p  { font-size: 12px; color: var(--muted); }
 
-    /* ── Main ── */
+    /* ── Layout ── */
     .main {
       max-width: 860px;
       margin: 32px auto;
@@ -98,7 +96,7 @@
     textarea:focus { border-color: var(--primary); }
     textarea::placeholder { color: var(--muted); }
 
-    /* ── Toolbar row ── */
+    /* ── Toolbar ── */
     .toolbar {
       display: flex;
       align-items: center;
@@ -138,7 +136,7 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Notice ── */
+    /* ── Notices ── */
     .notice {
       padding: 12px 16px;
       border-radius: var(--r);
@@ -151,6 +149,13 @@
       background: rgba(239,68,68,.08);
       border: 1px solid rgba(239,68,68,.25);
       color: #fca5a5;
+    }
+    .notice-warn {
+      background: rgba(234,179,8,.08);
+      border: 1px solid rgba(234,179,8,.25);
+      color: #fde68a;
+      font-size: 12px;
+      margin-bottom: 4px;
     }
 
     /* ── Terminal log ── */
@@ -168,30 +173,92 @@
     }
     .log-warn { color: var(--warn); }
 
-    /* ── Score cards ── */
+    /* ── Score summary row ── */
     .scores {
       display: grid;
-      grid-template-columns: repeat(3,1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 12px;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
     }
     .score-card {
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: var(--r);
-      padding: 18px;
-      text-align: center;
+      padding: 18px 16px 14px;
     }
-    .score-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
-    .score-num   { font-size: 40px; font-weight: 700; line-height: 1; }
-    .good { color: var(--good); }
-    .mid  { color: var(--warn); }
-    .bad  { color: var(--bad);  }
+    .score-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 10px;
+    }
+    .score-num {
+      font-size: 42px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+    .score-num.good { color: var(--good); }
+    .score-num.mid  { color: var(--warn); }
+    .score-num.bad  { color: var(--bad);  }
+    .score-bar-track {
+      height: 4px;
+      background: var(--raised);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width .6s ease;
+    }
+    .score-bar-fill.good { background: var(--good); }
+    .score-bar-fill.mid  { background: var(--warn); }
+    .score-bar-fill.bad  { background: var(--bad);  }
 
-    /* ── Vulns ── */
-    .vuln-list { display: flex; flex-direction: column; gap: 8px; }
+    /* ── Verdict badge ── */
+    .verdict {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      margin-bottom: 20px;
+    }
+    .verdict.good { background: rgba(34,197,94,.12);  color: #86efac; border: 1px solid rgba(34,197,94,.25); }
+    .verdict.mid  { background: rgba(234,179,8,.12); color: #fde68a; border: 1px solid rgba(234,179,8,.25); }
+    .verdict.bad  { background: rgba(239,68,68,.12);  color: #fca5a5; border: 1px solid rgba(239,68,68,.25); }
+
+    /* ── Vulnerabilities ── */
+    .vuln-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .vuln-counts {
+      display: flex;
+      gap: 8px;
+    }
+    .vuln-count-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .vuln-count-badge.critical { background: rgba(239,68,68,.15); color: #fca5a5; }
+    .vuln-count-badge.medium   { background: rgba(234,179,8,.15); color: #fde68a; }
+    .vuln-count-badge.low      { background: rgba(34,197,94,.15); color: #bbf7d0; }
+
+    .vuln-list { display: flex; flex-direction: column; gap: 6px; }
     .vuln-item {
-      display: flex; align-items: flex-start; gap: 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
       padding: 10px 14px;
       background: var(--bg);
       border-radius: var(--r);
@@ -211,12 +278,57 @@
     .critical .vuln-badge { background: rgba(239,68,68,.18); color: #fca5a5; }
     .medium   .vuln-badge { background: rgba(234,179,8,.18);  color: #fde68a; }
     .low      .vuln-badge { background: rgba(34,197,94,.18);  color: #bbf7d0; }
-    .vuln-desc { font-size: 13px; }
+    .vuln-desc { font-size: 13px; line-height: 1.4; }
 
     .no-vulns {
-      color: var(--good); font-size: 13px;
-      display: flex; align-items: center; gap: 8px;
-      padding: 6px 0;
+      color: var(--good);
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: rgba(34,197,94,.06);
+      border-radius: var(--r);
+      border: 1px solid rgba(34,197,94,.2);
+    }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 0;
+    }
+
+    /* ── Raw report (collapsible) ── */
+    .raw-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--muted);
+      user-select: none;
+      background: none;
+      border: none;
+      padding: 0;
+    }
+    .raw-toggle:hover { color: var(--text); }
+    .raw-toggle .arrow { font-size: 10px; transition: transform .2s; }
+    .raw-toggle.open .arrow { transform: rotate(90deg); }
+    .raw-pre {
+      margin-top: 10px;
+      background: #080f1a;
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 14px;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--muted);
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 300px;
+      overflow-y: auto;
     }
 
     .hidden { display: none !important; }
@@ -226,12 +338,10 @@
 
 <!-- ── Header ── -->
 <header>
-  <div class="header-left">
-    <div class="logo">⬡</div>
-    <div>
-      <h1>GenLayer Contract Scorer</h1>
-      <p>Audit Intelligent Contracts with an on-chain LLM</p>
-    </div>
+  <div class="logo">⬡</div>
+  <div>
+    <h1>GenLayer Contract Scorer</h1>
+    <p>Audit Intelligent Contracts with an on-chain LLM</p>
   </div>
 </header>
 
@@ -267,35 +377,51 @@
     <div class="log" id="log"></div>
   </div>
 
-  <!-- Audit result -->
+  <!-- ── Audit result ── -->
   <div class="card hidden" id="resultCard">
     <div class="card-title">Audit Result</div>
 
+    <!-- Verdict -->
+    <div id="verdictBadge" class="verdict hidden"></div>
+
+    <!-- Scores -->
     <div class="scores" id="scoresGrid">
       <div class="score-card">
         <div class="score-label">Overall</div>
         <div class="score-num" id="sOverall">—</div>
+        <div class="score-bar-track"><div class="score-bar-fill" id="bOverall" style="width:0%"></div></div>
       </div>
       <div class="score-card">
         <div class="score-label">Code Quality</div>
         <div class="score-num" id="sQuality">—</div>
+        <div class="score-bar-track"><div class="score-bar-fill" id="bQuality" style="width:0%"></div></div>
       </div>
       <div class="score-card">
         <div class="score-label">Security</div>
         <div class="score-num" id="sSecurity">—</div>
+        <div class="score-bar-track"><div class="score-bar-fill" id="bSecurity" style="width:0%"></div></div>
       </div>
     </div>
 
+    <!-- Vulnerabilities -->
     <div id="vulnSection">
-      <div class="card-title" style="margin-bottom:10px">Vulnerabilities</div>
+      <div class="vuln-header">
+        <div class="card-title" style="margin:0">Vulnerabilities</div>
+        <div class="vuln-counts" id="vulnCounts"></div>
+      </div>
       <div class="vuln-list" id="vulnList"></div>
     </div>
 
-    <div class="no-vulns hidden" id="noVulns">✓ No vulnerabilities found</div>
+    <div class="no-vulns hidden" id="noVulns">✓ No vulnerabilities detected</div>
 
-    <!-- raw fallback if parsing fails -->
-    <pre id="rawPre" class="hidden"
-      style="font-family:var(--mono);font-size:12px;color:var(--muted);white-space:pre-wrap;word-break:break-word;margin-top:14px"></pre>
+    <!-- Raw report (always present if there's output) -->
+    <div id="rawSection" class="hidden">
+      <div class="divider"></div>
+      <button class="raw-toggle" id="rawToggle" onclick="toggleRaw()">
+        <span class="arrow">▶</span> Full report (raw)
+      </button>
+      <pre class="raw-pre hidden" id="rawPre"></pre>
+    </div>
   </div>
 
 </div>
@@ -329,7 +455,7 @@
     });
 
     if (!res.ok) {
-      const { error } = await res.json();
+      const { error } = await res.json().catch(() => ({ error: 'Request failed' }));
       showError(error);
       setScoring(false);
       return;
@@ -343,7 +469,7 @@
     evtSrc.onmessage = e => {
       const msg = JSON.parse(e.data);
       if (msg.type === 'log') {
-        appendLog(msg.text);
+        appendLog(msg.text, msg.text.startsWith('[warn]'));
       } else if (msg.type === 'result') {
         renderResult(msg.data);
         setScoring(false);
@@ -356,7 +482,12 @@
       }
     };
 
-    evtSrc.onerror = () => { setScoring(false); evtSrc.close(); };
+    evtSrc.onerror = () => {
+      showError('Connection to server lost. The scoring job may still be running — try "Refresh result" in a moment.');
+      setScoring(false);
+      show('refreshBtn');
+      evtSrc.close();
+    };
   }
 
   async function refreshResult() {
@@ -372,47 +503,102 @@
   function renderResult(data) {
     show('resultCard');
 
+    // ── Scores ──
     if (data.overall !== null) {
-      setValue('sOverall',  data.overall,  true);
-      setValue('sQuality',  data.quality,  true);
-      setValue('sSecurity', data.security, true);
+      setScore('sOverall',  'bOverall',  data.overall);
+      setScore('sQuality',  'bQuality',  data.quality);
+      setScore('sSecurity', 'bSecurity', data.security);
       show('scoresGrid');
+
+      // Verdict badge
+      const grade = gradeClass(data.overall);
+      const labels = { good: '✓ Looks Good', mid: '⚠ Needs Attention', bad: '✕ High Risk' };
+      const badge = document.getElementById('verdictBadge');
+      badge.textContent = labels[grade];
+      badge.className = `verdict ${grade}`;
+      show('verdictBadge');
     } else {
       hide('scoresGrid');
+      hide('verdictBadge');
     }
 
-    if (data.vulnerabilities.length) {
-      document.getElementById('vulnList').innerHTML = data.vulnerabilities.map(v => `
-        <div class="vuln-item ${v.severity}">
-          <span class="vuln-badge">${v.severity}</span>
+    // ── Vulnerabilities ──
+    const vulns = data.vulnerabilities || [];
+    if (vulns.length) {
+      // Sort: critical → medium → low
+      const order = { critical: 0, medium: 1, low: 2 };
+      vulns.sort((a, b) => (order[a.severity] ?? 3) - (order[b.severity] ?? 3));
+
+      // Counts
+      const counts = { critical: 0, medium: 0, low: 0 };
+      vulns.forEach(v => { if (counts[v.severity] !== undefined) counts[v.severity]++; });
+      document.getElementById('vulnCounts').innerHTML = ['critical','medium','low']
+        .filter(s => counts[s] > 0)
+        .map(s => `<span class="vuln-count-badge ${s}">${counts[s]} ${s}</span>`)
+        .join('');
+
+      document.getElementById('vulnList').innerHTML = vulns.map(v => `
+        <div class="vuln-item ${esc(v.severity)}">
+          <span class="vuln-badge">${esc(v.severity)}</span>
           <span class="vuln-desc">${esc(v.description)}</span>
         </div>
       `).join('');
       show('vulnSection');
+      hide('noVulns');
     } else if (data.overall !== null) {
       hide('vulnSection');
       show('noVulns');
+    } else {
+      hide('vulnSection');
     }
 
-    if (data.overall === null && data.raw.trim()) {
-      document.getElementById('rawPre').textContent = data.raw;
-      show('rawPre');
+    // ── Raw report (always shown if there's content) ──
+    const rawText = (data.raw || '').trim();
+    if (rawText) {
+      document.getElementById('rawPre').textContent = rawText;
+      show('rawSection');
     }
   }
 
-  function setValue(id, score, color) {
-    const el = document.getElementById(id);
-    el.textContent = score;
-    if (color) el.className = 'score-num ' + (score >= 70 ? 'good' : score >= 40 ? 'mid' : 'bad');
+  function setScore(numId, barId, score) {
+    const cls = gradeClass(score);
+    const numEl = document.getElementById(numId);
+    numEl.textContent = score;
+    numEl.className = `score-num ${cls}`;
+    const barEl = document.getElementById(barId);
+    barEl.style.width = `${score}%`;
+    barEl.className = `score-bar-fill ${cls}`;
+  }
+
+  function gradeClass(score) {
+    return score >= 70 ? 'good' : score >= 40 ? 'mid' : 'bad';
   }
 
   function clearResult() {
     hide('resultCard');
+    hide('verdictBadge');
     hide('noVulns');
+    hide('rawSection');
     hide('rawPre');
     document.getElementById('vulnList').innerHTML = '';
+    document.getElementById('vulnCounts').innerHTML = '';
     show('vulnSection');
     show('scoresGrid');
+    // Reset raw toggle
+    document.getElementById('rawToggle').classList.remove('open');
+  }
+
+  function toggleRaw() {
+    const pre = document.getElementById('rawPre');
+    const btn = document.getElementById('rawToggle');
+    const isOpen = !pre.classList.contains('hidden');
+    if (isOpen) {
+      hide('rawPre');
+      btn.classList.remove('open');
+    } else {
+      show('rawPre');
+      btn.classList.add('open');
+    }
   }
 
   // ── Log ──────────────────────────────────────────────────────────────────────
@@ -426,10 +612,10 @@
     hide('logCard');
   }
 
-  function appendLog(text) {
+  function appendLog(text, isWarn) {
     const box = document.getElementById('log');
     const line = document.createElement('div');
-    if (text.startsWith('[warn]')) line.className = 'log-warn';
+    if (isWarn) line.className = 'log-warn';
     line.textContent = text;
     box.appendChild(line);
     box.scrollTop = box.scrollHeight;
@@ -439,11 +625,9 @@
   function setScoring(on) {
     const btn = document.getElementById('scoreBtn');
     btn.disabled = on;
-    if (on) {
-      btn.innerHTML = `<div class="spinner"></div> Scoring…`;
-    } else {
-      btn.textContent = 'Score Contract';
-    }
+    btn.innerHTML = on
+      ? `<div class="spinner"></div> Scoring…`
+      : 'Score Contract';
   }
 
   // ── Error ────────────────────────────────────────────────────────────────────
