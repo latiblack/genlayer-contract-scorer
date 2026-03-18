@@ -8,185 +8,90 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:       #0f172a;
-      --surface:  #1e293b;
-      --raised:   #293548;
-      --border:   #334155;
-      --primary:  #6366f1;
-      --primary-h:#818cf8;
-      --text:     #f1f5f9;
-      --muted:    #94a3b8;
-      --good:     #22c55e;
-      --warn:     #eab308;
-      --bad:      #ef4444;
-      --radius:   8px;
-      --font:     'Segoe UI', system-ui, -apple-system, sans-serif;
-      --mono:     'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      --bg:      #0f172a;
+      --surface: #1e293b;
+      --raised:  #293548;
+      --border:  #334155;
+      --primary: #6366f1;
+      --text:    #f1f5f9;
+      --muted:   #94a3b8;
+      --good:    #22c55e;
+      --warn:    #eab308;
+      --bad:     #ef4444;
+      --mono:    'Cascadia Code','Fira Code','Consolas',monospace;
+      --sans:    'Segoe UI',system-ui,-apple-system,sans-serif;
+      --r:       8px;
     }
 
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: var(--font);
+      font-family: var(--sans);
       font-size: 14px;
       line-height: 1.5;
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
     }
 
     /* ── Header ── */
     header {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
-      padding: 14px 24px;
+      padding: 14px 28px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      justify-content: space-between;
+      gap: 16px;
     }
-    header .logo {
-      width: 32px; height: 32px;
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .logo {
+      width: 34px; height: 34px;
       background: var(--primary);
       border-radius: 6px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
+      font-size: 18px; flex-shrink: 0;
     }
     header h1 { font-size: 16px; font-weight: 600; }
-    header p { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    header p  { font-size: 12px; color: var(--muted); }
 
-    /* ── Layout ── */
-    .layout {
-      display: flex;
-      flex: 1;
-      min-height: 0;
-    }
-
-    /* ── Sidebar ── */
-    aside {
-      width: 260px;
-      min-width: 260px;
+    /* ── Config bar ── */
+    .config-bar {
       background: var(--surface);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-    }
-    .sidebar-section {
-      padding: 16px;
       border-bottom: 1px solid var(--border);
+      padding: 10px 28px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      flex-wrap: wrap;
     }
-    .sidebar-section h2 {
+    .config-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+    .config-label { color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-size: 10px; }
+    .config-value { font-family: var(--mono); color: var(--text); }
+    .config-value.missing { color: var(--bad); }
+
+    .local-badge {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
       font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .08em;
       color: var(--muted);
-      margin-bottom: 10px;
-    }
-
-    .env-list { display: flex; flex-direction: column; gap: 4px; }
-    .env-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 10px;
-      border-radius: var(--radius);
-      cursor: pointer;
-      border: 1px solid transparent;
-      transition: background .15s, border-color .15s;
-    }
-    .env-item:hover { background: var(--raised); }
-    .env-item.active {
-      background: rgba(99,102,241,.15);
-      border-color: var(--primary);
-    }
-    .env-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--muted);
-      flex-shrink: 0;
-    }
-    .env-item.active .env-dot { background: var(--primary); }
-    .env-name { flex: 1; font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .env-addr { font-size: 11px; color: var(--muted); font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .env-delete {
-      flex-shrink: 0;
-      background: none;
-      border: none;
-      color: var(--muted);
-      cursor: pointer;
-      padding: 2px 4px;
-      border-radius: 4px;
-      font-size: 14px;
-      line-height: 1;
-      opacity: 0;
-      transition: opacity .15s, color .15s;
-    }
-    .env-item:hover .env-delete { opacity: 1; }
-    .env-delete:hover { color: var(--bad); }
-
-    .empty-state {
-      color: var(--muted);
-      font-size: 12px;
-      text-align: center;
-      padding: 12px 0;
-    }
-
-    /* ── Add environment form ── */
-    .add-env-form { display: flex; flex-direction: column; gap: 8px; }
-    label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 3px; }
-    input[type="text"] {
-      width: 100%;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 7px 10px;
-      color: var(--text);
-      font-size: 13px;
-      outline: none;
-      transition: border-color .15s;
-    }
-    input[type="text"]:focus { border-color: var(--primary); }
-    input[type="text"]::placeholder { color: var(--muted); }
-
-    /* ── Buttons ── */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 8px 14px;
-      border-radius: var(--radius);
-      border: none;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 500;
-      transition: opacity .15s, background .15s;
-    }
-    .btn:disabled { opacity: .45; cursor: not-allowed; }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-primary:not(:disabled):hover { background: var(--primary-h); }
-    .btn-secondary {
       background: var(--raised);
-      color: var(--text);
       border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 10px;
     }
-    .btn-secondary:not(:disabled):hover { background: var(--border); }
-    .btn-sm { padding: 5px 10px; font-size: 12px; }
-    .btn-full { width: 100%; }
-
-    /* ── Main content ── */
-    main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
+    .local-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--warn);
+      flex-shrink: 0;
     }
 
-    .main-inner {
-      flex: 1;
-      overflow-y: auto;
-      padding: 24px;
+    /* ── Main ── */
+    .main {
+      max-width: 860px;
+      margin: 32px auto;
+      padding: 0 24px;
       display: flex;
       flex-direction: column;
       gap: 20px;
@@ -196,75 +101,30 @@
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: var(--r);
       padding: 20px;
     }
-    .card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--muted);
       margin-bottom: 14px;
     }
-    .card-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: .06em;
-    }
 
-    /* ── No env selected banner ── */
-    .no-env-banner {
-      background: rgba(99,102,241,.08);
-      border: 1px solid rgba(99,102,241,.3);
-      border-radius: var(--radius);
-      padding: 14px 18px;
-      color: var(--muted);
-      font-size: 13px;
-      display: none;
-      align-items: center;
-      gap: 10px;
-    }
-    .no-env-banner.visible { display: flex; }
-    .no-env-banner strong { color: var(--text); }
-
-    /* ── Active environment pill ── */
-    .active-env-bar {
-      display: none;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 16px;
-      background: rgba(99,102,241,.1);
-      border: 1px solid rgba(99,102,241,.25);
-      border-radius: var(--radius);
-    }
-    .active-env-bar.visible { display: flex; }
-    .active-env-bar .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
-    .active-env-bar .name { font-weight: 600; font-size: 13px; }
-    .active-env-bar .address { font-family: var(--mono); font-size: 11px; color: var(--muted); }
-
-    /* ── Source code area ── */
-    .source-area {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .source-toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
+    /* ── Inputs ── */
     textarea {
       width: 100%;
-      height: 260px;
+      height: 280px;
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: var(--r);
       padding: 12px;
       color: var(--text);
       font-family: var(--mono);
       font-size: 12.5px;
-      line-height: 1.6;
+      line-height: 1.65;
       resize: vertical;
       outline: none;
       transition: border-color .15s;
@@ -272,73 +132,108 @@
     textarea:focus { border-color: var(--primary); }
     textarea::placeholder { color: var(--muted); }
 
-    .score-btn-row {
+    /* ── Toolbar row ── */
+    .toolbar {
       display: flex;
       align-items: center;
       gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
     }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px;
+      border-radius: var(--r);
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: opacity .15s, background .15s;
+    }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:not(:disabled):hover { background: #818cf8; }
+    .btn-ghost {
+      background: var(--raised);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:not(:disabled):hover { background: var(--border); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
     .spinner {
-      width: 14px; height: 14px;
+      width: 13px; height: 13px;
       border: 2px solid rgba(255,255,255,.3);
       border-top-color: #fff;
       border-radius: 50%;
-      animation: spin .7s linear infinite;
-      display: none;
+      animation: spin .65s linear infinite;
     }
-    .scoring .spinner { display: block; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Log ── */
-    .log-box {
-      background: var(--bg);
+    /* ── Notice ── */
+    .notice {
+      padding: 12px 16px;
+      border-radius: var(--r);
+      font-size: 13px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .notice-warn {
+      background: rgba(234,179,8,.08);
+      border: 1px solid rgba(234,179,8,.25);
+      color: #fde68a;
+    }
+    .notice-err {
+      background: rgba(239,68,68,.08);
+      border: 1px solid rgba(239,68,68,.25);
+      color: #fca5a5;
+    }
+
+    /* ── Terminal log ── */
+    .log {
+      background: #080f1a;
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 12px;
+      border-radius: var(--r);
+      padding: 14px;
       font-family: var(--mono);
       font-size: 12px;
-      line-height: 1.7;
-      max-height: 200px;
+      line-height: 1.75;
+      max-height: 220px;
       overflow-y: auto;
       color: #7dd3fc;
-      display: none;
     }
-    .log-box.visible { display: block; }
     .log-warn { color: var(--warn); }
-    .log-err  { color: var(--bad); }
 
-    /* ── Scores ── */
-    .scores-grid {
+    /* ── Score cards ── */
+    .scores {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(3,1fr);
       gap: 12px;
+      margin-bottom: 20px;
     }
     .score-card {
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
+      border-radius: var(--r);
+      padding: 18px;
       text-align: center;
     }
     .score-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
-    .score-value {
-      font-size: 36px;
-      font-weight: 700;
-      font-variant-numeric: tabular-nums;
-      line-height: 1;
-    }
-    .score-good { color: var(--good); }
-    .score-mid  { color: var(--warn); }
-    .score-bad  { color: var(--bad); }
+    .score-num   { font-size: 40px; font-weight: 700; line-height: 1; }
+    .good { color: var(--good); }
+    .mid  { color: var(--warn); }
+    .bad  { color: var(--bad);  }
 
-    /* ── Vulnerabilities ── */
+    /* ── Vulns ── */
     .vuln-list { display: flex; flex-direction: column; gap: 8px; }
     .vuln-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 10px 12px;
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 14px;
       background: var(--bg);
-      border-radius: var(--radius);
+      border-radius: var(--r);
       border-left: 3px solid transparent;
     }
     .vuln-item.critical { border-color: var(--bad); }
@@ -346,284 +241,166 @@
     .vuln-item.low      { border-color: var(--good); }
     .vuln-badge {
       flex-shrink: 0;
-      font-size: 10px;
-      font-weight: 700;
-      padding: 2px 6px;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 7px;
       border-radius: 4px;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-      margin-top: 1px;
+      text-transform: uppercase; letter-spacing: .05em;
+      margin-top: 2px;
     }
-    .critical .vuln-badge { background: rgba(239,68,68,.2); color: #fca5a5; }
-    .medium   .vuln-badge { background: rgba(234,179,8,.2);  color: #fde68a; }
-    .low      .vuln-badge { background: rgba(34,197,94,.2);  color: #bbf7d0; }
-    .vuln-desc { font-size: 13px; line-height: 1.5; }
+    .critical .vuln-badge { background: rgba(239,68,68,.18); color: #fca5a5; }
+    .medium   .vuln-badge { background: rgba(234,179,8,.18);  color: #fde68a; }
+    .low      .vuln-badge { background: rgba(34,197,94,.18);  color: #bbf7d0; }
+    .vuln-desc { font-size: 13px; }
 
     .no-vulns {
-      color: var(--good);
-      font-size: 13px;
-      padding: 10px 0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      color: var(--good); font-size: 13px;
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 0;
     }
 
-    .result-section { display: none; }
-    .result-section.visible { display: block; }
-
-    /* ── Error toast ── */
-    .error-bar {
-      display: none;
-      padding: 10px 14px;
-      background: rgba(239,68,68,.12);
-      border: 1px solid rgba(239,68,68,.35);
-      border-radius: var(--radius);
-      color: #fca5a5;
-      font-size: 13px;
-    }
-    .error-bar.visible { display: block; }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
 
+<!-- ── Header ── -->
 <header>
-  <div class="logo">⬡</div>
-  <div>
-    <h1>GenLayer Contract Scorer</h1>
-    <p>Audit Intelligent Contracts with an on-chain LLM</p>
+  <div class="header-left">
+    <div class="logo">⬡</div>
+    <div>
+      <h1>GenLayer Contract Scorer</h1>
+      <p>Audit Intelligent Contracts with an on-chain LLM</p>
+    </div>
   </div>
 </header>
 
-<div class="layout">
+<!-- ── Config bar (from .env) ── -->
+<div class="config-bar" id="configBar">
+  <div class="config-item">
+    <span class="config-label">Contract</span>
+    <span class="config-value" id="cfgAddress">—</span>
+  </div>
+  <div class="config-item">
+    <span class="config-label">RPC</span>
+    <span class="config-value" id="cfgRpc">—</span>
+  </div>
+  <div class="config-item">
+    <span class="config-label">Private Key</span>
+    <span class="config-value" id="cfgKey">—</span>
+  </div>
+  <div class="local-badge">
+    <div class="local-dot"></div>
+    Local only — GenLayer Studio runs on localhost
+  </div>
+</div>
 
-  <!-- ── Sidebar ── -->
-  <aside>
-    <div class="sidebar-section">
-      <h2>Environments</h2>
-      <div class="env-list" id="envList">
-        <p class="empty-state">No environments yet</p>
+<!-- ── Main ── -->
+<div class="main">
+
+  <!-- Config missing warning -->
+  <div class="notice notice-warn hidden" id="cfgWarning">
+    <span>⚠</span>
+    <span>
+      <strong>CONTRACT_ADDRESS</strong> is not set.
+      Copy <code>.env.example</code> to <code>.env</code> and fill in your deployed contract address, then restart the server.
+    </span>
+  </div>
+
+  <!-- Error -->
+  <div class="notice notice-err hidden" id="errorNotice"></div>
+
+  <!-- Source code input -->
+  <div class="card">
+    <div class="card-title">Contract Source Code</div>
+    <textarea id="sourceCode" placeholder="Paste the full source code of the contract you want to audit…"></textarea>
+    <div class="toolbar">
+      <button class="btn btn-primary" id="scoreBtn" onclick="scoreContract()">
+        Score Contract
+      </button>
+      <button class="btn btn-ghost btn-sm" onclick="loadExample()">
+        Load example (bank_vault.py)
+      </button>
+      <button class="btn btn-ghost btn-sm hidden" id="refreshBtn" onclick="refreshResult()">
+        ↻ Refresh result
+      </button>
+    </div>
+  </div>
+
+  <!-- Terminal output -->
+  <div class="card hidden" id="logCard">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="card-title" style="margin:0">Output</div>
+      <button class="btn btn-ghost btn-sm" onclick="clearLog()">Clear</button>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <!-- Audit result -->
+  <div class="card hidden" id="resultCard">
+    <div class="card-title">Audit Result</div>
+
+    <div class="scores" id="scoresGrid">
+      <div class="score-card">
+        <div class="score-label">Overall</div>
+        <div class="score-num" id="sOverall">—</div>
+      </div>
+      <div class="score-card">
+        <div class="score-label">Code Quality</div>
+        <div class="score-num" id="sQuality">—</div>
+      </div>
+      <div class="score-card">
+        <div class="score-label">Security</div>
+        <div class="score-num" id="sSecurity">—</div>
       </div>
     </div>
 
-    <div class="sidebar-section" style="flex:1">
-      <h2>Add Environment</h2>
-      <div class="add-env-form">
-        <div>
-          <label for="envName">Name</label>
-          <input type="text" id="envName" placeholder="e.g. testnet-1">
-        </div>
-        <div>
-          <label for="envAddress">Contract Address</label>
-          <input type="text" id="envAddress" placeholder="0x…">
-        </div>
-        <div>
-          <label for="envRpcUrl">RPC URL <span style="color:var(--muted)">(optional)</span></label>
-          <input type="text" id="envRpcUrl" placeholder="https://studio.genlayer.com">
-        </div>
-        <button class="btn btn-primary btn-full" onclick="addEnv()">+ Add Environment</button>
-      </div>
+    <div id="vulnSection">
+      <div class="card-title" style="margin-bottom:10px">Vulnerabilities</div>
+      <div class="vuln-list" id="vulnList"></div>
     </div>
-  </aside>
 
-  <!-- ── Main ── -->
-  <main>
-    <div class="main-inner">
+    <div class="no-vulns hidden" id="noVulns">✓ No vulnerabilities found</div>
 
-      <!-- No env selected -->
-      <div class="no-env-banner" id="noEnvBanner">
-        <span>👈</span>
-        <span>Add a deployed contract address as an <strong>environment</strong> to get started.</span>
-      </div>
+    <!-- raw fallback if parsing fails -->
+    <pre id="rawPre" class="hidden"
+      style="font-family:var(--mono);font-size:12px;color:var(--muted);white-space:pre-wrap;word-break:break-word;margin-top:14px"></pre>
+  </div>
 
-      <!-- Active env bar -->
-      <div class="active-env-bar" id="activeEnvBar">
-        <span class="label">Active</span>
-        <span class="name" id="activeEnvName">—</span>
-        <span class="address" id="activeEnvAddr"></span>
-      </div>
-
-      <!-- Error bar -->
-      <div class="error-bar" id="errorBar"></div>
-
-      <!-- Source code card -->
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Contract Source Code</span>
-          <button class="btn btn-secondary btn-sm" onclick="loadExample()">Load bank_vault.py</button>
-        </div>
-        <div class="source-area">
-          <textarea id="sourceCode" placeholder="Paste the full source code of the contract you want to audit…"></textarea>
-          <div class="score-btn-row">
-            <button class="btn btn-primary" id="scoreBtn" onclick="scoreContract()" disabled>
-              <div class="spinner" id="spinner"></div>
-              <span id="scoreBtnText">Score Contract</span>
-            </button>
-            <button class="btn btn-secondary btn-sm" id="refreshBtn" onclick="refreshResult()" style="display:none">
-              ↻ Refresh Result
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Log card -->
-      <div class="card" id="logCard" style="display:none">
-        <div class="card-header">
-          <span class="card-title">Output</span>
-          <button class="btn btn-secondary btn-sm" onclick="clearLog()">Clear</button>
-        </div>
-        <div class="log-box visible" id="logBox"></div>
-      </div>
-
-      <!-- Result card -->
-      <div class="card result-section" id="resultSection">
-        <div class="card-header">
-          <span class="card-title">Audit Result</span>
-        </div>
-
-        <div class="scores-grid" id="scoresGrid" style="display:none; margin-bottom:20px">
-          <div class="score-card">
-            <div class="score-label">Overall</div>
-            <div class="score-value" id="scoreOverall">—</div>
-          </div>
-          <div class="score-card">
-            <div class="score-label">Code Quality</div>
-            <div class="score-value" id="scoreQuality">—</div>
-          </div>
-          <div class="score-card">
-            <div class="score-label">Security</div>
-            <div class="score-value" id="scoreSecurity">—</div>
-          </div>
-        </div>
-
-        <div id="vulnSection" style="display:none">
-          <div class="card-title" style="margin-bottom:10px">Vulnerabilities</div>
-          <div class="vuln-list" id="vulnList"></div>
-        </div>
-
-        <div class="no-vulns" id="noVulns" style="display:none">
-          ✓ No vulnerabilities found
-        </div>
-
-        <div id="rawResult" style="display:none; margin-top:16px">
-          <div class="card-title" style="margin-bottom:8px">Raw Output</div>
-          <pre style="font-family:var(--mono);font-size:12px;color:var(--muted);white-space:pre-wrap;word-break:break-word" id="rawText"></pre>
-        </div>
-      </div>
-
-    </div>
-  </main>
 </div>
 
 <script>
-  let activeEnv = null;
-  let eventSource = null;
-
-  // ── Bootstrap ──────────────────────────────────────────────────────────────
+  // ── Bootstrap ───────────────────────────────────────────────────────────────
   async function init() {
-    await loadEnvs();
-  }
+    const cfg = await fetch('/api/config').then(r => r.json());
 
-  // ── Environments ───────────────────────────────────────────────────────────
-  async function loadEnvs() {
-    const envs = await fetch('/api/environments').then(r => r.json());
-    renderEnvList(envs);
-    // Reactivate the previously active env if it still exists
-    if (activeEnv && !envs.find(e => e.name === activeEnv)) {
-      setActiveEnv(null);
-    }
-    if (!activeEnv && envs.length) setActiveEnv(envs[0]);
-  }
+    const missing = !cfg.address || cfg.address.startsWith('0x_');
 
-  function renderEnvList(envs) {
-    const list = document.getElementById('envList');
-    if (!envs.length) {
-      list.innerHTML = '<p class="empty-state">No environments yet</p>';
-      return;
-    }
-    list.innerHTML = envs.map(e => `
-      <div class="env-item ${activeEnv === e.name ? 'active' : ''}" onclick="setActiveEnv(${JSON.stringify(e)})">
-        <div class="env-dot"></div>
-        <div style="flex:1;min-width:0">
-          <div class="env-name">${esc(e.name)}</div>
-          <div class="env-addr">${truncate(e.address, 20)}</div>
-        </div>
-        <button class="env-delete" title="Remove" onclick="event.stopPropagation();deleteEnv(${JSON.stringify(e.name)})">×</button>
-      </div>
-    `).join('');
-  }
+    document.getElementById('cfgAddress').textContent = cfg.address || '(not set)';
+    document.getElementById('cfgRpc').textContent     = cfg.rpcUrl;
+    document.getElementById('cfgKey').textContent     = cfg.privateKey;
 
-  function setActiveEnv(env) {
-    activeEnv = env ? env.name : null;
-    const bar = document.getElementById('activeEnvBar');
-    const noBanner = document.getElementById('noEnvBanner');
-    const scoreBtn = document.getElementById('scoreBtn');
-
-    if (env) {
-      document.getElementById('activeEnvName').textContent = env.name;
-      document.getElementById('activeEnvAddr').textContent = truncate(env.address, 28);
-      bar.classList.add('visible');
-      noBanner.classList.remove('visible');
-      scoreBtn.disabled = false;
-    } else {
-      bar.classList.remove('visible');
-      noBanner.classList.add('visible');
-      scoreBtn.disabled = true;
-    }
-
-    // Re-render list to update active highlight
-    loadEnvs();
-  }
-
-  async function addEnv() {
-    const name    = document.getElementById('envName').value.trim();
-    const address = document.getElementById('envAddress').value.trim();
-    const rpcUrl  = document.getElementById('envRpcUrl').value.trim();
-
-    if (!name || !address) {
-      showError('Name and contract address are required.');
-      return;
-    }
-
-    const res = await fetch('/api/environments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, address, rpcUrl }),
-    });
-
-    if (res.ok) {
-      document.getElementById('envName').value = '';
-      document.getElementById('envAddress').value = '';
-      document.getElementById('envRpcUrl').value = '';
-      hideError();
-      const env = { name, address, rpcUrl };
-      await loadEnvs();
-      setActiveEnv(env);
-    } else {
-      const { error } = await res.json();
-      showError(error);
+    if (missing) {
+      document.getElementById('cfgAddress').className = 'config-value missing';
+      show('cfgWarning');
+      document.getElementById('scoreBtn').disabled = true;
     }
   }
 
-  async function deleteEnv(name) {
-    await fetch(`/api/environments/${encodeURIComponent(name)}`, { method: 'DELETE' });
-    if (activeEnv === name) setActiveEnv(null);
-    await loadEnvs();
-  }
-
-  // ── Example ────────────────────────────────────────────────────────────────
+  // ── Example ─────────────────────────────────────────────────────────────────
   async function loadExample() {
     const res = await fetch('/api/example');
-    if (!res.ok) { showError('Could not load example file'); return; }
+    if (!res.ok) return showError('Could not load example file.');
     const { content } = await res.json();
     document.getElementById('sourceCode').value = content;
     hideError();
   }
 
-  // ── Scoring ────────────────────────────────────────────────────────────────
+  // ── Score ────────────────────────────────────────────────────────────────────
+  let evtSrc = null;
+
   async function scoreContract() {
-    if (!activeEnv) return;
     const sourceCode = document.getElementById('sourceCode').value.trim();
-    if (!sourceCode) { showError('Paste some source code first.'); return; }
+    if (!sourceCode) return showError('Paste some source code first.');
 
     hideError();
     clearResult();
@@ -633,7 +410,7 @@
     const res = await fetch('/api/score', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ envName: activeEnv, sourceCode }),
+      body: JSON.stringify({ sourceCode }),
     });
 
     if (!res.ok) {
@@ -645,141 +422,127 @@
 
     const { jobId } = await res.json();
 
-    if (eventSource) eventSource.close();
-    eventSource = new EventSource(`/api/stream/${jobId}`);
+    if (evtSrc) evtSrc.close();
+    evtSrc = new EventSource(`/api/stream/${jobId}`);
 
-    eventSource.onmessage = e => {
+    evtSrc.onmessage = e => {
       const msg = JSON.parse(e.data);
       if (msg.type === 'log') {
         appendLog(msg.text);
       } else if (msg.type === 'result') {
-        showResult(msg.data);
+        renderResult(msg.data);
         setScoring(false);
-        document.getElementById('refreshBtn').style.display = 'inline-flex';
-        eventSource.close();
+        show('refreshBtn');
+        evtSrc.close();
       } else if (msg.type === 'error') {
         showError(msg.message);
         setScoring(false);
-        eventSource.close();
+        evtSrc.close();
       }
     };
 
-    eventSource.onerror = () => {
-      setScoring(false);
-      eventSource.close();
-    };
+    evtSrc.onerror = () => { setScoring(false); evtSrc.close(); };
   }
 
   async function refreshResult() {
-    if (!activeEnv) return;
     hideError();
-    const res = await fetch(`/api/result/${encodeURIComponent(activeEnv)}`);
-    if (!res.ok) { showError('Failed to read result'); return; }
+    const res = await fetch('/api/result');
+    if (!res.ok) { showError('Failed to read result from contract.'); return; }
     const { data } = await res.json();
     clearResult();
-    showResult(data);
+    renderResult(data);
   }
 
-  // ── Rendering helpers ──────────────────────────────────────────────────────
-  function appendLog(text) {
-    const box = document.getElementById('logBox');
-    const line = document.createElement('div');
-    if (text.startsWith('[warn]')) { line.className = 'log-warn'; }
-    if (text.startsWith('[err]'))  { line.className = 'log-err'; }
-    line.textContent = text;
-    box.appendChild(line);
-    box.scrollTop = box.scrollHeight;
-  }
-
-  function showResult(data) {
-    const section = document.getElementById('resultSection');
-    section.classList.add('visible');
+  // ── Render result ────────────────────────────────────────────────────────────
+  function renderResult(data) {
+    show('resultCard');
 
     if (data.overall !== null) {
-      document.getElementById('scoreOverall').textContent = data.overall;
-      document.getElementById('scoreQuality').textContent = data.quality;
-      document.getElementById('scoreSecurity').textContent = data.security;
-      setScoreColor('scoreOverall', data.overall);
-      setScoreColor('scoreQuality', data.quality);
-      setScoreColor('scoreSecurity', data.security);
-      document.getElementById('scoresGrid').style.display = 'grid';
+      setValue('sOverall',  data.overall,  true);
+      setValue('sQuality',  data.quality,  true);
+      setValue('sSecurity', data.security, true);
+      show('scoresGrid');
+    } else {
+      hide('scoresGrid');
     }
 
     if (data.vulnerabilities.length) {
-      const list = document.getElementById('vulnList');
-      list.innerHTML = data.vulnerabilities.map(v => `
+      document.getElementById('vulnList').innerHTML = data.vulnerabilities.map(v => `
         <div class="vuln-item ${v.severity}">
           <span class="vuln-badge">${v.severity}</span>
           <span class="vuln-desc">${esc(v.description)}</span>
         </div>
       `).join('');
-      document.getElementById('vulnSection').style.display = 'block';
+      show('vulnSection');
     } else if (data.overall !== null) {
-      document.getElementById('noVulns').style.display = 'flex';
+      hide('vulnSection');
+      show('noVulns');
     }
 
-    if (data.raw && data.overall === null) {
-      document.getElementById('rawText').textContent = data.raw;
-      document.getElementById('rawResult').style.display = 'block';
+    if (data.overall === null && data.raw.trim()) {
+      document.getElementById('rawPre').textContent = data.raw;
+      show('rawPre');
     }
   }
 
-  function setScoreColor(id, score) {
+  function setValue(id, score, color) {
     const el = document.getElementById(id);
-    el.className = 'score-value ' + (score >= 70 ? 'score-good' : score >= 40 ? 'score-mid' : 'score-bad');
+    el.textContent = score;
+    if (color) el.className = 'score-num ' + (score >= 70 ? 'good' : score >= 40 ? 'mid' : 'bad');
   }
 
   function clearResult() {
-    const section = document.getElementById('resultSection');
-    section.classList.remove('visible');
-    document.getElementById('scoresGrid').style.display = 'none';
-    document.getElementById('vulnSection').style.display = 'none';
-    document.getElementById('noVulns').style.display = 'none';
-    document.getElementById('rawResult').style.display = 'none';
+    hide('resultCard');
+    hide('noVulns');
+    hide('rawPre');
     document.getElementById('vulnList').innerHTML = '';
+    show('vulnSection');
+    show('scoresGrid');
   }
 
+  // ── Log ──────────────────────────────────────────────────────────────────────
   function showLog() {
-    document.getElementById('logCard').style.display = 'block';
-    document.getElementById('logBox').innerHTML = '';
+    show('logCard');
+    document.getElementById('log').innerHTML = '';
   }
 
   function clearLog() {
-    document.getElementById('logBox').innerHTML = '';
-    document.getElementById('logCard').style.display = 'none';
+    document.getElementById('log').innerHTML = '';
+    hide('logCard');
   }
 
+  function appendLog(text) {
+    const box = document.getElementById('log');
+    const line = document.createElement('div');
+    if (text.startsWith('[warn]')) line.className = 'log-warn';
+    line.textContent = text;
+    box.appendChild(line);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  // ── Scoring state ────────────────────────────────────────────────────────────
   function setScoring(on) {
     const btn = document.getElementById('scoreBtn');
-    const spinner = document.getElementById('spinner');
-    const text = document.getElementById('scoreBtnText');
     btn.disabled = on;
-    spinner.style.display = on ? 'block' : 'none';
-    text.textContent = on ? 'Scoring…' : 'Score Contract';
+    if (on) {
+      btn.innerHTML = `<div class="spinner"></div> Scoring…`;
+    } else {
+      btn.textContent = 'Score Contract';
+    }
   }
 
+  // ── Error ────────────────────────────────────────────────────────────────────
   function showError(msg) {
-    const bar = document.getElementById('errorBar');
-    bar.textContent = msg;
-    bar.classList.add('visible');
+    const el = document.getElementById('errorNotice');
+    el.innerHTML = `<span>✕</span><span>${esc(msg)}</span>`;
+    el.classList.remove('hidden');
   }
+  function hideError() { hide('errorNotice'); }
 
-  function hideError() {
-    document.getElementById('errorBar').classList.remove('visible');
-  }
-
-  // ── Utilities ──────────────────────────────────────────────────────────────
-  function esc(str) {
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-
-  function truncate(str, n) {
-    return str.length > n ? str.slice(0, n - 1) + '…' : str;
-  }
+  // ── Utils ────────────────────────────────────────────────────────────────────
+  const show = id => document.getElementById(id).classList.remove('hidden');
+  const hide = id => document.getElementById(id).classList.add('hidden');
+  const esc  = s  => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
   init();
 </script>

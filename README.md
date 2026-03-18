@@ -41,30 +41,37 @@ Vulnerabilities:
 
 ### Method 2: Local Web UI
 
-A simple browser-based app that lets you manage deployed contract environments and score contracts through a UI — no CLI commands needed after the initial deploy.
+A local testing playground — paste any contract code, score it, and see the structured result right in the browser. Config lives in `.env`; no extra setup in the UI.
 
-**1. Install dependencies**
+> **Why local only?** GenLayer Studio runs on `localhost` — it can't be reached by a deployed web app like Vercel. The UI must run on the same machine as your GenLayer node.
+
+**1. Configure `.env`**
+
+```bash
+cp .env.example .env
+```
+
+Fill in your values:
+
+```
+PRIVATE_KEY=your_private_key_here
+RPC_URL=http://localhost:8080
+CONTRACT_ADDRESS=0x_your_deployed_contract_address
+```
+
+**2. Install and start**
 
 ```bash
 cd app
 npm install
-```
-
-**2. Start the server**
-
-```bash
 npm start
 ```
 
 Opens at **http://localhost:3000**
 
-**3. Add your deployed contract**
+**3. Score a contract**
 
-Click **Add Environment** in the sidebar — enter a name, your contract address, and optionally an RPC URL (defaults to `https://studio.genlayer.com`). The environment is saved locally.
-
-**4. Score a contract**
-
-Select an environment, paste source code (or click **Load bank_vault.py** for the example), and click **Score Contract**. The UI streams live output and displays the structured result when the transaction finalizes.
+Paste source code (or click **Load example**) and hit **Score Contract**. Live CLI output streams in the terminal panel below the editor; the structured audit result appears when the transaction finalizes.
 
 -----
 
@@ -103,7 +110,8 @@ Then edit `.env`:
 
 ```
 PRIVATE_KEY=your_private_key_here
-RPC_URL=https://studio.genlayer.com
+RPC_URL=http://localhost:8080
+CONTRACT_ADDRESS=0x_your_deployed_contract_address
 ```
 
 **4. Deploy**
