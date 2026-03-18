@@ -43,14 +43,41 @@ Vulnerabilities:
 
 Requires [Node.js](https://nodejs.org) and [Docker](https://www.docker.com).
 
-```bash
-# Install the CLI
-npm install -g genlayer
+**1. Install the CLI**
 
-# Select the testnet
+```bash
+npm install -g genlayer
+```
+
+**2. Set your LLM provider API key**
+
+The scorer contract calls an LLM internally, so you need to export an API key for your chosen provider before initialising:
+
+```bash
+# OpenAI
+export OPENAIKEY='your_openai_api_key'
+
+# Heurist (free credits available)
+export HEURISTKEY='your_heurist_api_key'
+
+# io.net
+export IOINTELLIGENCE_API_KEY='your_ionet_api_key'
+```
+
+You only need one. See the [GenLayer LLM provider docs](https://docs.genlayer.com) for the full list.
+
+**3. Initialise and start the local environment**
+
+```bash
+genlayer init   # sets up Docker containers and prompts for your LLM provider
+genlayer up     # starts the environment
+```
+
+**4. Select the network and deploy**
+
+```bash
 genlayer network testnet-bradbury
 
-# Deploy the scorer
 genlayer deploy --contract contracts/contract_scorer.py
 ```
 
