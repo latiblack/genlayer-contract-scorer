@@ -1,0 +1,13 @@
+{
+  "name": "genlayer-contract-scorer-ui",
+  "version": "1.0.0",
+  "description": "Local web UI for the GenLayer Contract Scorer",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0",
+    "dotenv": "^16.0.0"
+  }
+}
