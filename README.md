@@ -39,7 +39,36 @@ Vulnerabilities:
 1. Go to **Write Methods** → `score_contract`, paste the full source code of the contract you want to audit into the `source_code` field, and click **Execute**
 1. Wait for the transaction to reach `FINALIZED`, then go to **Read Methods** → `get_last_score` to read the result
 
-### Method 2: GenLayer CLI (Terminal)
+### Method 2: Local Web UI
+
+A simple browser-based app that lets you manage deployed contract environments and score contracts through a UI — no CLI commands needed after the initial deploy.
+
+**1. Install dependencies**
+
+```bash
+cd app
+npm install
+```
+
+**2. Start the server**
+
+```bash
+npm start
+```
+
+Opens at **http://localhost:3000**
+
+**3. Add your deployed contract**
+
+Click **Add Environment** in the sidebar — enter a name, your contract address, and optionally an RPC URL (defaults to `https://studio.genlayer.com`). The environment is saved locally.
+
+**4. Score a contract**
+
+Select an environment, paste source code (or click **Load bank_vault.py** for the example), and click **Score Contract**. The UI streams live output and displays the structured result when the transaction finalizes.
+
+-----
+
+### Method 3: GenLayer CLI (Terminal)
 
 Requires [Node.js](https://nodejs.org) (v18+).
 
