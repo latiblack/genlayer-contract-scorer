@@ -28,38 +28,86 @@ Vulnerabilities:
 
 -----
 
-## Repository Structure
-
-```
-genlayer-contract-scorer/
-├── contracts/
-│   └── contract_scorer.py   # The main scorer contract
-├── examples/
-│   └── bank_vault.py        # Intentionally flawed contract for testing
-└── README.md
-```
-
------
-
 ## How to Use
 
-### 1. Deploy the Scorer
+### Method 1: GenLayer Studio (Browser)
 
 1. Open [GenLayer Studio](https://studio.genlayer.com)
 1. Paste the contents of `contracts/contract_scorer.py` into the editor
 1. Click **Deploy** — no constructor parameters needed
 1. Wait for the deployment transaction to reach `FINALIZED` status
+1. Go to **Write Methods** → `score_contract`, paste the full source code of the contract you want to audit into the `source_code` field, and click **Execute**
+1. Wait for the transaction to reach `FINALIZED`, then go to **Read Methods** → `get_last_score` to read the result
 
-### 2. Score a Contract
+### Method 2: GenLayer CLI (Terminal)
 
-1. Go to **Write Methods** → `score_contract`
-1. Paste the full source code of the contract you want to audit into the `source_code` field
-1. Click **Execute** and wait for the transaction to reach `FINALIZED`
+Requires [Node.js](https://nodejs.org) (v18+).
 
-### 3. Read the Result
+**1. Install the CLI**
 
-1. Go to **Read Methods** → `get_last_score`
-1. Click to read — the audit result will be returned as a formatted string
+```bash
+npm install -g @genlayer/cli
+```
+
+Verify:
+
+```bash
+genlayer --version
+```
+
+**2. Initialize a project**
+
+```bash
+genlayer init my-project
+cd my-project
+```
+
+Then copy `contracts/contract_scorer.py` into the project's contracts folder.
+
+**3. Configure your environment**
+
+Create a `.env` file in the project root:
+
+```
+PRIVATE_KEY=your_private_key_here
+RPC_URL=https://studio.genlayer.com
+```
+
+**4. Build the contract**
+
+```bash
+genlayer build
+```
+
+Any syntax or compilation errors will surface here.
+
+**5. Deploy**
+
+```bash
+genlayer deploy
+```
+
+You'll get back a contract address and transaction hash.
+
+**6. Interact with the contract**
+
+Score a contract by calling the write method:
+
+```bash
+genlayer call <contract_address> score_contract "$(cat contracts/contract_scorer.py)"
+```
+
+Read the result:
+
+```bash
+genlayer call <contract_address> get_last_score
+```
+
+**7. Check transaction status**
+
+```bash
+genlayer tx <tx_hash>
+```
 
 -----
 
