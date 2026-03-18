@@ -96,8 +96,7 @@ genlayer write <contract_address> score_contract --args "[\"$(cat examples/bank_
 
 **PowerShell (Windows):**
 ```powershell
-$src = Get-Content examples/bank_vault.py -Raw
-genlayer write <contract_address> score_contract --args "[$($src | ConvertTo-Json)]"
+genlayer write <contract_address> score_contract --args "[(Get-Content examples/bank_vault.py -Raw | ConvertTo-Json)]"
 ```
 
 **6. Read the result**
