@@ -99,7 +99,7 @@ This pattern — custom validator checking structure rather than exact match —
 
 ## Author
 
-Built by [Lati](https://github.com/YOUR_GITHUB) as part of the [Seedback](https://seedback.xyz) ecosystem — a Web3 feedback and project discovery platform on Base chain.
+Built by [Lati](https://github.com/latiblack) as a contribution to the [GenLayer](https://genlayer.com) ecosystem.
 
 -----
 
