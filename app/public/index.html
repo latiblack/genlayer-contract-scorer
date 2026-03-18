@@ -53,40 +53,6 @@
     header h1 { font-size: 16px; font-weight: 600; }
     header p  { font-size: 12px; color: var(--muted); }
 
-    /* ── Config bar ── */
-    .config-bar {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 10px 28px;
-      display: flex;
-      align-items: center;
-      gap: 24px;
-      flex-wrap: wrap;
-    }
-    .config-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
-    .config-label { color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-size: 10px; }
-    .config-value { font-family: var(--mono); color: var(--text); }
-    .config-value.missing { color: var(--bad); }
-
-    .local-badge {
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11px;
-      color: var(--muted);
-      background: var(--raised);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 4px 10px;
-    }
-    .local-dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: var(--warn);
-      flex-shrink: 0;
-    }
-
     /* ── Main ── */
     .main {
       max-width: 860px;
@@ -181,11 +147,6 @@
       align-items: flex-start;
       gap: 10px;
     }
-    .notice-warn {
-      background: rgba(234,179,8,.08);
-      border: 1px solid rgba(234,179,8,.25);
-      color: #fde68a;
-    }
     .notice-err {
       background: rgba(239,68,68,.08);
       border: 1px solid rgba(239,68,68,.25);
@@ -274,37 +235,8 @@
   </div>
 </header>
 
-<!-- ── Config bar (from .env) ── -->
-<div class="config-bar" id="configBar">
-  <div class="config-item">
-    <span class="config-label">Contract</span>
-    <span class="config-value" id="cfgAddress">—</span>
-  </div>
-  <div class="config-item">
-    <span class="config-label">RPC</span>
-    <span class="config-value" id="cfgRpc">—</span>
-  </div>
-  <div class="config-item">
-    <span class="config-label">Private Key</span>
-    <span class="config-value" id="cfgKey">—</span>
-  </div>
-  <div class="local-badge">
-    <div class="local-dot"></div>
-    Local only — GenLayer Studio runs on localhost
-  </div>
-</div>
-
 <!-- ── Main ── -->
 <div class="main">
-
-  <!-- Config missing warning -->
-  <div class="notice notice-warn hidden" id="cfgWarning">
-    <span>⚠</span>
-    <span>
-      <strong>CONTRACT_ADDRESS</strong> is not set.
-      Copy <code>.env.example</code> to <code>.env</code> and fill in your deployed contract address, then restart the server.
-    </span>
-  </div>
 
   <!-- Error -->
   <div class="notice notice-err hidden" id="errorNotice"></div>
@@ -369,23 +301,6 @@
 </div>
 
 <script>
-  // ── Bootstrap ───────────────────────────────────────────────────────────────
-  async function init() {
-    const cfg = await fetch('/api/config').then(r => r.json());
-
-    const missing = !cfg.address || cfg.address.startsWith('0x_');
-
-    document.getElementById('cfgAddress').textContent = cfg.address || '(not set)';
-    document.getElementById('cfgRpc').textContent     = cfg.rpcUrl;
-    document.getElementById('cfgKey').textContent     = cfg.privateKey;
-
-    if (missing) {
-      document.getElementById('cfgAddress').className = 'config-value missing';
-      show('cfgWarning');
-      document.getElementById('scoreBtn').disabled = true;
-    }
-  }
-
   // ── Example ─────────────────────────────────────────────────────────────────
   async function loadExample() {
     const res = await fetch('/api/example');
@@ -543,8 +458,6 @@
   const show = id => document.getElementById(id).classList.remove('hidden');
   const hide = id => document.getElementById(id).classList.add('hidden');
   const esc  = s  => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
-  init();
 </script>
 </body>
 </html>

@@ -13,14 +13,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 const REPO_ROOT = path.join(__dirname, '..');
 const jobs = new Map();
 
-function getConfig() {
-  return {
-    address:    process.env.CONTRACT_ADDRESS || '',
-    rpcUrl:     process.env.RPC_URL          || 'http://localhost:8080',
-    privateKey: process.env.PRIVATE_KEY      ? '••••••••' : '(not set)',
-  };
-}
-
 function parseScoreResult(raw) {
   const result = { raw, overall: null, quality: null, security: null, vulnerabilities: [] };
 
@@ -41,10 +33,6 @@ function parseScoreResult(raw) {
   return result;
 }
 
-// ── Config (read from .env) ───────────────────────────────────────────────────
-
-app.get('/api/config', (req, res) => res.json(getConfig()));
-
 // ── Example contract ──────────────────────────────────────────────────────────
 
 app.get('/api/example', (req, res) => {
@@ -62,7 +50,8 @@ app.post('/api/score', (req, res) => {
   const { sourceCode } = req.body;
   if (!sourceCode) return res.status(400).json({ error: 'sourceCode is required' });
 
-  const { address, rpcUrl } = getConfig();
+  const address = process.env.CONTRACT_ADDRESS || '';
+  const rpcUrl  = process.env.RPC_URL || 'http://localhost:8080';
   if (!address || address.startsWith('0x_')) {
     return res.status(400).json({ error: 'CONTRACT_ADDRESS is not set in .env' });
   }
@@ -146,7 +135,8 @@ app.get('/api/stream/:jobId', (req, res) => {
 // ── Refresh (re-read state without re-scoring) ────────────────────────────────
 
 app.get('/api/result', (req, res) => {
-  const { address, rpcUrl } = getConfig();
+  const address = process.env.CONTRACT_ADDRESS || '';
+  const rpcUrl  = process.env.RPC_URL || 'http://localhost:8080';
   if (!address || address.startsWith('0x_')) {
     return res.status(400).json({ error: 'CONTRACT_ADDRESS is not set in .env' });
   }
@@ -167,8 +157,7 @@ app.get('/api/result', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  const cfg = getConfig();
   console.log(`\nGenLayer Contract Scorer  →  http://localhost:${PORT}`);
-  console.log(`Contract : ${cfg.address || '(not set — add CONTRACT_ADDRESS to .env)'}`);
-  console.log(`RPC      : ${cfg.rpcUrl}\n`);
+  console.log(`Contract : ${process.env.CONTRACT_ADDRESS || '(not set — add CONTRACT_ADDRESS to .env)'}`);
+  console.log(`RPC      : ${process.env.RPC_URL || 'http://localhost:8080'}\n`);
 });
