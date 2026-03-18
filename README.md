@@ -64,7 +64,13 @@ cd genlayer-contract-scorer
 
 **3. Configure your environment**
 
-Create a `.env` file in the project root:
+Copy the example env file and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env`:
 
 ```
 PRIVATE_KEY=your_private_key_here
