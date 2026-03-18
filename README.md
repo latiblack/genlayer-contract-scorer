@@ -28,38 +28,46 @@ Vulnerabilities:
 
 -----
 
-## Repository Structure
-
-```
-genlayer-contract-scorer/
-├── contracts/
-│   └── contract_scorer.py   # The main scorer contract
-├── examples/
-│   └── bank_vault.py        # Intentionally flawed contract for testing
-└── README.md
-```
-
------
-
 ## How to Use
 
-### 1. Deploy the Scorer
+### Method 1: GenLayer Studio (Browser)
 
 1. Open [GenLayer Studio](https://studio.genlayer.com)
 1. Paste the contents of `contracts/contract_scorer.py` into the editor
 1. Click **Deploy** — no constructor parameters needed
 1. Wait for the deployment transaction to reach `FINALIZED` status
+1. Go to **Write Methods** → `score_contract`, paste the full source code of the contract you want to audit into the `source_code` field, and click **Execute**
+1. Wait for the transaction to reach `FINALIZED`, then go to **Read Methods** → `get_last_score` to read the result
 
-### 2. Score a Contract
+### Method 2: GenLayer CLI (Terminal)
 
-1. Go to **Write Methods** → `score_contract`
-1. Paste the full source code of the contract you want to audit into the `source_code` field
-1. Click **Execute** and wait for the transaction to reach `FINALIZED`
+Requires [Node.js](https://nodejs.org) and [Docker](https://www.docker.com).
 
-### 3. Read the Result
+```bash
+# Install the CLI
+npm install -g genlayer
 
-1. Go to **Read Methods** → `get_last_score`
-1. Click to read — the audit result will be returned as a formatted string
+# Select the testnet
+genlayer network testnet-bradbury
+
+# Deploy the scorer
+genlayer deploy --contract contracts/contract_scorer.py
+```
+
+Once deployed, use the returned contract address to interact:
+
+```bash
+# Score a contract (write method)
+genlayer write <contract-address> score_contract --args '["<source_code_string>"]'
+
+# Read the audit result (read method)
+genlayer call <contract-address> get_last_score
+```
+
+> Tip: you can pass the contents of a file as the source code argument using command substitution:
+> ```bash
+> genlayer write <contract-address> score_contract --args "[\"$(cat examples/bank_vault.py)\"]"
+> ```
 
 -----
 
