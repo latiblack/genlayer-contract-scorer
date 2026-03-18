@@ -120,19 +120,29 @@ app.get('/api/stream/:jobId', (req, res) => {
       { env: childEnv, cwd: REPO_ROOT }
     );
 
-    let callOutput = '';
+    let callStdout = '';
+    let callStderr = '';
+
     call.stdout.on('data', chunk => {
       const text = chunk.toString();
-      callOutput += text;
+      callStdout += text;
       text.split('\n').filter(l => l.trim()).forEach(l => send('log', { text: l }));
     });
-    pipeLines(call.stderr, 'warn');
+    call.stderr.on('data', chunk => {
+      const text = chunk.toString();
+      callStderr += text;
+      text.split('\n').filter(l => l.trim()).forEach(l => send('log', { text: `[warn] ${l}` }));
+    });
 
     call.on('close', callCode => {
       if (callCode !== 0) {
         send('error', { message: `genlayer call exited with code ${callCode}` });
         return res.end();
       }
+      // Some genlayer CLI versions write the return value to stderr instead of stdout
+      const callOutput = callStdout.trim() ? callStdout : callStderr;
+      console.log('[scorer] raw call stdout:', JSON.stringify(callStdout));
+      console.log('[scorer] raw call stderr:', JSON.stringify(callStderr));
       if (!callOutput.trim()) {
         send('error', { message: 'genlayer call returned empty output — transaction may not be finalised yet. Try "Refresh result" in a few seconds.' });
         return res.end();
@@ -160,10 +170,15 @@ app.get('/api/result', (req, res) => {
     cwd: REPO_ROOT,
   });
 
-  let output = '';
-  call.stdout.on('data', chunk => { output += chunk.toString(); });
+  let stdout = '';
+  let stderr = '';
+  call.stdout.on('data', chunk => { stdout += chunk.toString(); });
+  call.stderr.on('data', chunk => { stderr += chunk.toString(); });
   call.on('close', code => {
     if (code !== 0) return res.status(500).json({ error: 'genlayer call failed' });
+    const output = stdout.trim() ? stdout : stderr;
+    console.log('[scorer/refresh] stdout:', JSON.stringify(stdout));
+    console.log('[scorer/refresh] stderr:', JSON.stringify(stderr));
     res.json({ data: parseScoreResult(output) });
   });
 });
