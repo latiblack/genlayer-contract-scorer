@@ -46,7 +46,7 @@ Requires [Node.js](https://nodejs.org) (v18+).
 **1. Install the CLI**
 
 ```bash
-npm install -g @genlayer/cli
+npm install -g genlayer
 ```
 
 Verify:
@@ -55,10 +55,10 @@ Verify:
 genlayer --version
 ```
 
-**2. Initialize a project**
+**2. Create a new project**
 
 ```bash
-genlayer init my-project
+genlayer new my-project
 cd my-project
 ```
 
@@ -73,40 +73,28 @@ PRIVATE_KEY=your_private_key_here
 RPC_URL=https://studio.genlayer.com
 ```
 
-**4. Build the contract**
+**4. Deploy**
 
 ```bash
-genlayer build
-```
-
-Any syntax or compilation errors will surface here.
-
-**5. Deploy**
-
-```bash
-genlayer deploy
+genlayer deploy --contract contracts/contract_scorer.py
 ```
 
 You'll get back a contract address and transaction hash.
 
-**6. Interact with the contract**
+**5. Score a contract**
 
-Score a contract by calling the write method:
+`score_contract` is a write method (it updates state), so use `genlayer write`:
 
 ```bash
-genlayer call <contract_address> score_contract "$(cat examples/bank_vault.py)"
+genlayer write <contract_address> score_contract --args "[\"$(cat examples/bank_vault.py)\"]"
 ```
 
-Read the result:
+**6. Read the result**
+
+`get_last_score` is a read-only view, so use `genlayer call`:
 
 ```bash
 genlayer call <contract_address> get_last_score
-```
-
-**7. Check transaction status**
-
-```bash
-genlayer tx <tx_hash>
 ```
 
 -----
