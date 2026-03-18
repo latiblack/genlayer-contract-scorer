@@ -55,18 +55,22 @@ Verify:
 genlayer --version
 ```
 
-**2. Create a new project**
+**2. Clone this repo**
 
 ```bash
-genlayer new my-project
-cd my-project
+git clone https://github.com/latiblack/genlayer-contract-scorer.git
+cd genlayer-contract-scorer
 ```
-
-Then copy `contracts/contract_scorer.py` into the project's contracts folder.
 
 **3. Configure your environment**
 
-Create a `.env` file in the project root:
+Copy the example env file and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env`:
 
 ```
 PRIVATE_KEY=your_private_key_here
