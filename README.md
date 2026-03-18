@@ -41,60 +41,73 @@ Vulnerabilities:
 
 ### Method 2: GenLayer CLI (Terminal)
 
-Requires [Node.js](https://nodejs.org) and [Docker](https://www.docker.com).
+Requires [Node.js](https://nodejs.org) (v18+).
 
 **1. Install the CLI**
 
 ```bash
-npm install -g genlayer
+npm install -g @genlayer/cli
 ```
 
-**2. Set your LLM provider API key**
-
-The scorer contract calls an LLM internally, so you need to export an API key for your chosen provider before initialising:
+Verify:
 
 ```bash
-# OpenAI
-export OPENAIKEY='your_openai_api_key'
-
-# Heurist (free credits available)
-export HEURISTKEY='your_heurist_api_key'
-
-# io.net
-export IOINTELLIGENCE_API_KEY='your_ionet_api_key'
+genlayer --version
 ```
 
-You only need one. See the [GenLayer LLM provider docs](https://docs.genlayer.com) for the full list.
-
-**3. Initialise and start the local environment**
+**2. Initialize a project**
 
 ```bash
-genlayer init   # sets up Docker containers and prompts for your LLM provider
-genlayer up     # starts the environment
+genlayer init my-project
+cd my-project
 ```
 
-**4. Select the network and deploy**
+Then copy `contracts/contract_scorer.py` into the project's contracts folder.
+
+**3. Configure your environment**
+
+Create a `.env` file in the project root:
+
+```
+PRIVATE_KEY=your_private_key_here
+RPC_URL=https://studio.genlayer.com
+```
+
+**4. Build the contract**
 
 ```bash
-genlayer network testnet-bradbury
-
-genlayer deploy --contract contracts/contract_scorer.py
+genlayer build
 ```
 
-Once deployed, use the returned contract address to interact:
+Any syntax or compilation errors will surface here.
+
+**5. Deploy**
 
 ```bash
-# Score a contract (write method)
-genlayer write <contract-address> score_contract --args '["<source_code_string>"]'
-
-# Read the audit result (read method)
-genlayer call <contract-address> get_last_score
+genlayer deploy
 ```
 
-> Tip: you can pass the contents of a file as the source code argument using command substitution:
-> ```bash
-> genlayer write <contract-address> score_contract --args "[\"$(cat examples/bank_vault.py)\"]"
-> ```
+You'll get back a contract address and transaction hash.
+
+**6. Interact with the contract**
+
+Score a contract by calling the write method:
+
+```bash
+genlayer call <contract_address> score_contract "$(cat contracts/contract_scorer.py)"
+```
+
+Read the result:
+
+```bash
+genlayer call <contract_address> get_last_score
+```
+
+**7. Check transaction status**
+
+```bash
+genlayer tx <tx_hash>
+```
 
 -----
 
