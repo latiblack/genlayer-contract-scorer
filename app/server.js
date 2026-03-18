@@ -10,80 +10,35 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-const ENVS_FILE = path.join(__dirname, 'environments.json');
 const REPO_ROOT = path.join(__dirname, '..');
-
-// In-memory job store: jobId -> {env, sourceCode}
 const jobs = new Map();
 
-function loadEnvs() {
-  try {
-    return JSON.parse(fs.readFileSync(ENVS_FILE, 'utf8'));
-  } catch {
-    return [];
-  }
-}
-
-function saveEnvs(envs) {
-  fs.writeFileSync(ENVS_FILE, JSON.stringify(envs, null, 2));
-}
-
-// Parse the plain-text score result from get_last_score
 function parseScoreResult(raw) {
   const result = { raw, overall: null, quality: null, security: null, vulnerabilities: [] };
 
-  const scoreMatch = raw.match(/Overall:\s*(\d+)\s*\|\s*Quality:\s*(\d+)\s*\|\s*Security:\s*(\d+)/i);
-  if (scoreMatch) {
-    result.overall = parseInt(scoreMatch[1]);
-    result.quality = parseInt(scoreMatch[2]);
-    result.security = parseInt(scoreMatch[3]);
+  const m = raw.match(/Overall:\s*(\d+)\s*\|\s*Quality:\s*(\d+)\s*\|\s*Security:\s*(\d+)/i);
+  if (m) {
+    result.overall  = parseInt(m[1]);
+    result.quality  = parseInt(m[2]);
+    result.security = parseInt(m[3]);
   }
 
-  const vulnMatches = raw.match(/\[(CRITICAL|MEDIUM|LOW)\][^\n]+/gi) || [];
-  result.vulnerabilities = vulnMatches.map(line => {
-    const m = line.match(/\[(CRITICAL|MEDIUM|LOW)\]\s*(.+)/i);
-    return m ? { severity: m[1].toLowerCase(), description: m[2].trim() } : null;
-  }).filter(Boolean);
+  result.vulnerabilities = (raw.match(/\[(CRITICAL|MEDIUM|LOW)\][^\n]+/gi) || [])
+    .map(line => {
+      const v = line.match(/\[(CRITICAL|MEDIUM|LOW)\]\s*(.+)/i);
+      return v ? { severity: v[1].toLowerCase(), description: v[2].trim() } : null;
+    })
+    .filter(Boolean);
 
   return result;
 }
 
-// ── Environments ──────────────────────────────────────────────────────────────
-
-app.get('/api/environments', (req, res) => {
-  res.json(loadEnvs());
-});
-
-app.post('/api/environments', (req, res) => {
-  const { name, address, rpcUrl } = req.body;
-  if (!name || !address) return res.status(400).json({ error: 'name and address are required' });
-
-  const envs = loadEnvs();
-  if (envs.find(e => e.name === name)) {
-    return res.status(400).json({ error: `Environment "${name}" already exists` });
-  }
-
-  envs.push({
-    name,
-    address,
-    rpcUrl: rpcUrl || process.env.RPC_URL || 'https://studio.genlayer.com',
-  });
-  saveEnvs(envs);
-  res.json({ ok: true });
-});
-
-app.delete('/api/environments/:name', (req, res) => {
-  const envs = loadEnvs().filter(e => e.name !== decodeURIComponent(req.params.name));
-  saveEnvs(envs);
-  res.json({ ok: true });
-});
-
 // ── Example contract ──────────────────────────────────────────────────────────
 
 app.get('/api/example', (req, res) => {
-  const examplePath = path.join(REPO_ROOT, 'examples', 'bank_vault.py');
   try {
-    res.json({ content: fs.readFileSync(examplePath, 'utf8') });
+    const content = fs.readFileSync(path.join(REPO_ROOT, 'examples', 'bank_vault.py'), 'utf8');
+    res.json({ content });
   } catch {
     res.status(404).json({ error: 'Example file not found' });
   }
@@ -91,22 +46,21 @@ app.get('/api/example', (req, res) => {
 
 // ── Scoring ───────────────────────────────────────────────────────────────────
 
-// Step 1: create job and return jobId
 app.post('/api/score', (req, res) => {
-  const { envName, sourceCode } = req.body;
-  if (!envName || !sourceCode) {
-    return res.status(400).json({ error: 'envName and sourceCode are required' });
+  const { sourceCode } = req.body;
+  if (!sourceCode) return res.status(400).json({ error: 'sourceCode is required' });
+
+  const address = process.env.CONTRACT_ADDRESS || '';
+  const rpcUrl  = process.env.RPC_URL || 'http://localhost:8080';
+  if (!address || address.startsWith('0x_')) {
+    return res.status(400).json({ error: 'CONTRACT_ADDRESS is not set in .env' });
   }
 
-  const env = loadEnvs().find(e => e.name === envName);
-  if (!env) return res.status(404).json({ error: 'Environment not found' });
-
   const jobId = crypto.randomBytes(8).toString('hex');
-  jobs.set(jobId, { env, sourceCode });
+  jobs.set(jobId, { address, rpcUrl, sourceCode });
   res.json({ jobId });
 });
 
-// Step 2: SSE stream — runs genlayer write then genlayer call
 app.get('/api/stream/:jobId', (req, res) => {
   const job = jobs.get(req.params.jobId);
   if (!job) return res.status(404).json({ error: 'Job not found' });
@@ -117,61 +71,57 @@ app.get('/api/stream/:jobId', (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   res.flushHeaders();
 
-  const send = (type, payload) => {
+  const send = (type, payload) =>
     res.write(`data: ${JSON.stringify({ type, ...payload })}\n\n`);
-  };
 
-  const { env, sourceCode } = job;
+  const { address, rpcUrl, sourceCode } = job;
   const childEnv = {
     ...process.env,
     PRIVATE_KEY: process.env.PRIVATE_KEY || '',
-    RPC_URL: env.rpcUrl,
+    RPC_URL: rpcUrl,
   };
 
-  const argsJson = JSON.stringify([sourceCode]);
-  send('log', { text: `Submitting to ${env.address} on ${env.rpcUrl}...` });
+  const pipeLines = (stream, tag) =>
+    stream.on('data', chunk =>
+      chunk.toString().split('\n').filter(l => l.trim())
+        .forEach(l => send('log', { text: tag ? `[${tag}] ${l}` : l }))
+    );
 
-  const writeProc = spawn(
-    'genlayer',
-    ['write', env.address, 'score_contract', '--args', argsJson],
+  send('log', { text: `→ genlayer write ${address} score_contract` });
+  send('log', { text: `  RPC: ${rpcUrl}` });
+
+  const write = spawn(
+    'genlayer', ['write', address, 'score_contract', '--args', JSON.stringify([sourceCode])],
     { env: childEnv, cwd: REPO_ROOT }
   );
 
-  const pipeLines = (stream, prefix) =>
-    stream.on('data', chunk =>
-      chunk.toString().split('\n').filter(l => l.trim()).forEach(l =>
-        send('log', { text: prefix ? `[${prefix}] ${l}` : l })
-      )
-    );
+  pipeLines(write.stdout, '');
+  pipeLines(write.stderr, 'warn');
 
-  pipeLines(writeProc.stdout, '');
-  pipeLines(writeProc.stderr, 'warn');
-
-  writeProc.on('close', code => {
+  write.on('close', code => {
     if (code !== 0) {
-      send('error', { message: `genlayer write failed (exit ${code})` });
+      send('error', { message: `genlayer write exited with code ${code}` });
       return res.end();
     }
 
-    send('log', { text: 'Transaction submitted. Reading result...' });
+    send('log', { text: '→ Reading result from contract state…' });
 
-    const callProc = spawn(
-      'genlayer',
-      ['call', env.address, 'get_last_score'],
+    const call = spawn(
+      'genlayer', ['call', address, 'get_last_score'],
       { env: childEnv, cwd: REPO_ROOT }
     );
 
     let callOutput = '';
-    callProc.stdout.on('data', chunk => {
+    call.stdout.on('data', chunk => {
       const text = chunk.toString();
       callOutput += text;
       text.split('\n').filter(l => l.trim()).forEach(l => send('log', { text: l }));
     });
-    pipeLines(callProc.stderr, 'warn');
+    pipeLines(call.stderr, 'warn');
 
-    callProc.on('close', callCode => {
+    call.on('close', callCode => {
       if (callCode !== 0) {
-        send('error', { message: `genlayer call failed (exit ${callCode})` });
+        send('error', { message: `genlayer call exited with code ${callCode}` });
         return res.end();
       }
       send('result', { data: parseScoreResult(callOutput) });
@@ -179,29 +129,27 @@ app.get('/api/stream/:jobId', (req, res) => {
     });
   });
 
-  req.on('close', () => writeProc.kill());
+  req.on('close', () => write.kill());
 });
 
-// ── Refresh result only (no re-score) ────────────────────────────────────────
+// ── Refresh (re-read state without re-scoring) ────────────────────────────────
 
-app.get('/api/result/:envName', (req, res) => {
-  const env = loadEnvs().find(e => e.name === decodeURIComponent(req.params.envName));
-  if (!env) return res.status(404).json({ error: 'Environment not found' });
+app.get('/api/result', (req, res) => {
+  const address = process.env.CONTRACT_ADDRESS || '';
+  const rpcUrl  = process.env.RPC_URL || 'http://localhost:8080';
+  if (!address || address.startsWith('0x_')) {
+    return res.status(400).json({ error: 'CONTRACT_ADDRESS is not set in .env' });
+  }
 
-  const childEnv = {
-    ...process.env,
-    PRIVATE_KEY: process.env.PRIVATE_KEY || '',
-    RPC_URL: env.rpcUrl,
-  };
-
-  const callProc = spawn('genlayer', ['call', env.address, 'get_last_score'], {
+  const childEnv = { ...process.env, RPC_URL: rpcUrl };
+  const call = spawn('genlayer', ['call', address, 'get_last_score'], {
     env: childEnv,
     cwd: REPO_ROOT,
   });
 
   let output = '';
-  callProc.stdout.on('data', chunk => { output += chunk.toString(); });
-  callProc.on('close', code => {
+  call.stdout.on('data', chunk => { output += chunk.toString(); });
+  call.on('close', code => {
     if (code !== 0) return res.status(500).json({ error: 'genlayer call failed' });
     res.json({ data: parseScoreResult(output) });
   });
@@ -209,5 +157,7 @@ app.get('/api/result/:envName', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`\nGenLayer Contract Scorer UI → http://localhost:${PORT}\n`);
+  console.log(`\nGenLayer Contract Scorer  →  http://localhost:${PORT}`);
+  console.log(`Contract : ${process.env.CONTRACT_ADDRESS || '(not set — add CONTRACT_ADDRESS to .env)'}`);
+  console.log(`RPC      : ${process.env.RPC_URL || 'http://localhost:8080'}\n`);
 });
