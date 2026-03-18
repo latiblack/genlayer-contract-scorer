@@ -94,7 +94,7 @@ You'll get back a contract address and transaction hash.
 Score a contract by calling the write method:
 
 ```bash
-genlayer call <contract_address> score_contract "$(cat contracts/contract_scorer.py)"
+genlayer call <contract_address> score_contract "$(cat examples/bank_vault.py)"
 ```
 
 Read the result:
