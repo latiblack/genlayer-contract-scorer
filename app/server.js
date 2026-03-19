@@ -104,7 +104,7 @@ app.get('/api/stream/:jobId', async (req, res) => {
       address,
       functionName: 'score_contract',
       args: [sourceCode],
-      value: 0,
+      value: 0n,
     });
 
     send('log', { text: `→ Transaction submitted: ${txHash}` });
