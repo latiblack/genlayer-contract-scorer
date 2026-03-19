@@ -2,7 +2,6 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { readFileSync } from 'fs';
-import crypto from 'crypto';
 import express from 'express';
 import { createClient, createAccount } from 'genlayer-js';
 import { localnet } from 'genlayer-js/chains';
@@ -16,7 +15,6 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.static(join(__dirname, 'public')));
 
 const REPO_ROOT = join(__dirname, '..');
-const jobs = new Map();
 
 function makeClient() {
   const rpcUrl = process.env.RPC_URL || 'http://localhost:8080';
@@ -52,6 +50,22 @@ function parseScoreResult(raw) {
   return result;
 }
 
+const TERMINAL = new Set([
+  TransactionStatus.ACCEPTED,
+  TransactionStatus.FINALIZED,
+  TransactionStatus.UNDETERMINED,
+  TransactionStatus.CANCELED,
+  TransactionStatus.LEADER_TIMEOUT,
+  TransactionStatus.VALIDATORS_TIMEOUT,
+]);
+
+const FAILED = new Set([
+  TransactionStatus.UNDETERMINED,
+  TransactionStatus.CANCELED,
+  TransactionStatus.LEADER_TIMEOUT,
+  TransactionStatus.VALIDATORS_TIMEOUT,
+]);
+
 // ── Example contract ──────────────────────────────────────────────────────────
 
 app.get('/api/example', (req, res) => {
@@ -63,9 +77,9 @@ app.get('/api/example', (req, res) => {
   }
 });
 
-// ── Scoring ───────────────────────────────────────────────────────────────────
+// ── Submit transaction ────────────────────────────────────────────────────────
 
-app.post('/api/score', (req, res) => {
+app.post('/api/score', async (req, res) => {
   const { sourceCode } = req.body;
   if (!sourceCode) return res.status(400).json({ error: 'sourceCode is required' });
 
@@ -74,63 +88,52 @@ app.post('/api/score', (req, res) => {
     return res.status(400).json({ error: 'CONTRACT_ADDRESS is not set in .env' });
   }
 
-  const jobId = crypto.randomBytes(8).toString('hex');
-  jobs.set(jobId, { address, sourceCode });
-  res.json({ jobId });
-});
-
-app.get('/api/stream/:jobId', async (req, res) => {
-  const job = jobs.get(req.params.jobId);
-  if (!job) return res.status(404).json({ error: 'Job not found' });
-  jobs.delete(req.params.jobId);
-
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders();
-
-  const send = (type, payload) =>
-    res.write(`data: ${JSON.stringify({ type, ...payload })}\n\n`);
-
-  const { address, sourceCode } = job;
   try {
     const client = makeClient();
-    const rpcUrl = process.env.RPC_URL || 'http://localhost:8080';
-
-    send('log', { text: `→ Sending score_contract transaction to ${address}` });
-    send('log', { text: `  RPC: ${rpcUrl}` });
-
     const txHash = await client.writeContract({
       address,
       functionName: 'score_contract',
       args: [sourceCode],
       value: 0n,
     });
-
-    send('log', { text: `→ Transaction submitted: ${txHash}` });
-    send('log', { text: '→ Waiting for FINALIZED status…' });
-
-    await client.waitForTransactionReceipt({
-      hash: txHash,
-      status: TransactionStatus.FINALIZED,
-      retries: 120,
-      interval: 5000,
-    });
-
-    send('log', { text: '→ Transaction finalized. Reading result…' });
-
-    const raw = await client.readContract({
-      address,
-      functionName: 'get_last_score',
-      args: [],
-    });
-
-    send('result', { data: parseScoreResult(raw) });
+    res.json({ txHash, address });
   } catch (err) {
-    send('error', { message: err.message || String(err) });
+    res.status(500).json({ error: err.message || String(err) });
+  }
+});
+
+// ── Poll transaction status ───────────────────────────────────────────────────
+// Returns { status, done, result? } — each call is short-lived (<2 s).
+
+app.get('/api/status/:txHash', async (req, res) => {
+  const address = process.env.CONTRACT_ADDRESS || '';
+  if (!address || address.startsWith('0x_')) {
+    return res.status(400).json({ error: 'CONTRACT_ADDRESS is not set in .env' });
   }
 
-  res.end();
+  try {
+    const client = makeClient();
+    const tx = await client.getTransaction({ hash: req.params.txHash });
+    const status = tx.statusName || String(tx.status);
+    const done = TERMINAL.has(status);
+
+    if (done && FAILED.has(status)) {
+      return res.json({ status, done: true, error: `Transaction ended with status: ${status}` });
+    }
+
+    if (done) {
+      const raw = await client.readContract({
+        address,
+        functionName: 'get_last_score',
+        args: [],
+      });
+      return res.json({ status, done: true, result: parseScoreResult(raw) });
+    }
+
+    res.json({ status, done: false });
+  } catch (err) {
+    res.status(500).json({ error: err.message || String(err) });
+  }
 });
 
 // ── Refresh (re-read state without re-scoring) ────────────────────────────────

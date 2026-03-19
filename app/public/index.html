@@ -437,7 +437,7 @@
   }
 
   // ── Score ────────────────────────────────────────────────────────────────────
-  let evtSrc = null;
+  let pollTimer = null;
 
   async function scoreContract() {
     const sourceCode = document.getElementById('sourceCode').value.trim();
@@ -447,6 +447,7 @@
     clearResult();
     showLog();
     setScoring(true);
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
 
     const res = await fetch('/api/score', {
       method: 'POST',
@@ -461,42 +462,47 @@
       return;
     }
 
-    const { jobId } = await res.json();
+    const { txHash } = await res.json();
+    appendLog(`→ Transaction submitted: ${txHash}`);
+    appendLog(`→ Polling for status…`);
 
-    if (evtSrc) evtSrc.close();
-    evtSrc = new EventSource(`/api/stream/${jobId}`);
+    let lastStatus = null;
 
-    // Track whether a result was successfully received so onerror doesn't
-    // show a false "connection lost" message when the server closes normally.
-    let resultReceived = false;
-
-    evtSrc.onmessage = e => {
-      const msg = JSON.parse(e.data);
-      if (msg.type === 'log') {
-        appendLog(msg.text, msg.text.startsWith('[warn]'));
-      } else if (msg.type === 'result') {
-        resultReceived = true;
-        renderResult(msg.data);
+    async function poll() {
+      try {
+        const r = await fetch(`/api/status/${txHash}`);
+        if (!r.ok) {
+          const { error } = await r.json().catch(() => ({ error: 'Status check failed' }));
+          clearInterval(pollTimer); pollTimer = null;
+          showError(error);
+          setScoring(false);
+          return;
+        }
+        const { status, done, result, error } = await r.json();
+        if (status !== lastStatus) {
+          appendLog(`  status: ${status}`);
+          lastStatus = status;
+        }
+        if (done) {
+          clearInterval(pollTimer); pollTimer = null;
+          if (error) {
+            showError(error);
+          } else {
+            appendLog('→ Transaction accepted. Reading result…');
+            renderResult(result);
+            show('refreshBtn');
+          }
+          setScoring(false);
+        }
+      } catch (e) {
+        clearInterval(pollTimer); pollTimer = null;
+        showError('Connection error: ' + e.message);
         setScoring(false);
-        show('refreshBtn');
-        evtSrc.close();
-      } else if (msg.type === 'error') {
-        showError(msg.message);
-        setScoring(false);
-        evtSrc.close();
       }
-    };
+    }
 
-    evtSrc.onerror = () => {
-      // onerror fires whenever the server closes the SSE connection, even on
-      // a clean finish. Only report an error if we never got a result event.
-      setScoring(false);
-      show('refreshBtn');
-      if (!resultReceived) {
-        showError('Connection to server lost. The scoring job may still be running — try "Refresh result" in a moment.');
-      }
-      evtSrc.close();
-    };
+    poll();
+    pollTimer = setInterval(poll, 4000);
   }
 
   async function refreshResult() {
