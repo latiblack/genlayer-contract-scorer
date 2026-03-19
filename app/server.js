@@ -108,14 +108,36 @@ app.get('/api/stream/:jobId', async (req, res) => {
     });
 
     send('log', { text: `→ Transaction submitted: ${txHash}` });
-    send('log', { text: '→ Waiting for ACCEPTED status…' });
 
-    await client.waitForTransactionReceipt({
-      hash: txHash,
-      status: TransactionStatus.ACCEPTED,
-      retries: 120,
-      interval: 5000,
-    });
+    // Poll manually so we can stream live status updates to the UI
+    const TERMINAL = new Set([
+      TransactionStatus.ACCEPTED,
+      TransactionStatus.FINALIZED,
+      TransactionStatus.UNDETERMINED,
+      TransactionStatus.CANCELED,
+      TransactionStatus.LEADER_TIMEOUT,
+      TransactionStatus.VALIDATORS_TIMEOUT,
+    ]);
+    let lastStatus = null;
+    let accepted = false;
+    for (let i = 0; i < 120; i++) {
+      await new Promise(r => setTimeout(r, 5000));
+      let tx;
+      try { tx = await client.getTransaction({ hash: txHash }); } catch { continue; }
+      const st = tx.statusName || tx.status;
+      if (st !== lastStatus) {
+        send('log', { text: `  status: ${st}` });
+        lastStatus = st;
+      }
+      if (TERMINAL.has(st)) {
+        if (st !== TransactionStatus.ACCEPTED && st !== TransactionStatus.FINALIZED) {
+          throw new Error(`Transaction ended with status: ${st}`);
+        }
+        accepted = true;
+        break;
+      }
+    }
+    if (!accepted) throw new Error('Timed out waiting for transaction to be accepted');
 
     send('log', { text: '→ Transaction accepted. Reading result…' });
 
