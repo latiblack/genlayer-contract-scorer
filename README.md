@@ -39,17 +39,23 @@ Vulnerabilities:
 1. Go to **Write Methods** → `score_contract`, paste the full source code of the contract you want to audit into the `source_code` field, and click **Execute**
 1. Wait for the transaction to reach `ACCEPTED`, then go to **Read Methods** → `get_last_score` to read the result
 
-### Method 2: Local Web UI
+### Method 2: Web UI
 
-A local testing playground — paste any contract code, score it, and see the structured result right in the browser. Config lives in `.env`; no extra setup in the UI.
+A browser-based interface for submitting contracts and viewing structured audit results. Configuration is managed entirely through `.env` — no in-app setup required.
 
-**1. Configure `.env`**
+**Prerequisites**
+
+- [Node.js](https://nodejs.org) v18 or later
+- A deployed instance of `contracts/contract_scorer.py`
+- A funded account with a private key
+
+**1. Configure environment**
 
 ```bash
 cp .env.example .env
 ```
 
-Fill in your values:
+Edit `.env` with your values:
 
 ```
 PRIVATE_KEY=your_private_key_here
@@ -57,7 +63,7 @@ RPC_URL=http://localhost:8080
 CONTRACT_ADDRESS=0x_your_deployed_contract_address
 ```
 
-**2. Install and start**
+**2. Install dependencies and start**
 
 ```bash
 cd app
@@ -65,105 +71,15 @@ npm install
 npm start
 ```
 
-Opens at **http://localhost:3000**
+The server starts at **http://localhost:3000**.
 
-**3. Score a contract**
+**3. Run an audit**
 
-Paste source code (or click **Load example**) and hit **Score Contract**. The log panel streams live transaction status updates (`PENDING → PROPOSING → COMMITTING → REVEALING → ACCEPTED`); the structured audit result appears once the transaction is accepted.
+Paste the source code of any GenLayer Intelligent Contract into the editor (or click **Load example** to use the bundled `bank_vault.py`), then click **Score Contract**.
 
------
+The log panel displays live transaction status as it progresses through consensus (`PENDING → PROPOSING → COMMITTING → REVEALING → ACCEPTED`). Once the transaction is accepted, the structured audit result renders automatically — overall score, code quality, security score, and a sorted vulnerability list.
 
-### Method 3: Deploy to Vercel
-
-The web UI can be deployed to Vercel. Each API request is short-lived (the frontend polls for status), so it works within Vercel's serverless function limits.
-
-**1. Set environment variables in Vercel**
-
-```
-PRIVATE_KEY=your_private_key_here
-RPC_URL=https://studio.genlayer.com/api
-CONTRACT_ADDRESS=0x_your_deployed_contract_address
-```
-
-> Use a public GenLayer endpoint for `RPC_URL` — `localhost` is not reachable from Vercel's servers. [GenLayer Studio](https://studio.genlayer.com) (`https://studio.genlayer.com/api`) works.
-
-**2. Deploy**
-
-```bash
-npm i -g vercel
-vercel
-```
-
------
-
-### Method 4: GenLayer CLI (Terminal)
-
-Requires [Node.js](https://nodejs.org) (v18+).
-
-**1. Install the CLI**
-
-```bash
-npm install -g genlayer
-```
-
-Verify:
-
-```bash
-genlayer --version
-```
-
-**2. Clone this repo**
-
-```bash
-git clone https://github.com/latiblack/genlayer-contract-scorer.git
-cd genlayer-contract-scorer
-```
-
-**3. Configure your environment**
-
-Copy the example env file and fill in your values:
-
-```bash
-cp .env.example .env
-```
-
-Then edit `.env`:
-
-```
-PRIVATE_KEY=your_private_key_here
-RPC_URL=http://localhost:8080
-CONTRACT_ADDRESS=0x_your_deployed_contract_address
-```
-
-**4. Deploy**
-
-```bash
-genlayer deploy --contract contracts/contract_scorer.py
-```
-
-You'll get back a contract address and transaction hash.
-
-**5. Score a contract**
-
-`score_contract` is a write method (it updates state), so use `genlayer write`.
-
-**Bash / macOS / Linux:**
-```bash
-genlayer write <contract_address> score_contract --args "[\"$(cat examples/bank_vault.py)\"]"
-```
-
-**PowerShell (Windows):**
-```powershell
-genlayer write <contract_address> score_contract --args "[(Get-Content examples/bank_vault.py -Raw | ConvertTo-Json)]"
-```
-
-**6. Read the result**
-
-`get_last_score` is a read-only view, so use `genlayer call`:
-
-```bash
-genlayer call <contract_address> get_last_score
-```
+To re-read the last result without re-submitting, click **Refresh result**.
 
 -----
 
