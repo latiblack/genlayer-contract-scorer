@@ -35,15 +35,13 @@ Vulnerabilities:
 1. Open [GenLayer Studio](https://studio.genlayer.com)
 1. Paste the contents of `contracts/contract_scorer.py` into the editor
 1. Click **Deploy** — no constructor parameters needed
-1. Wait for the deployment transaction to reach `FINALIZED` status
+1. Wait for the deployment transaction to reach `ACCEPTED` status
 1. Go to **Write Methods** → `score_contract`, paste the full source code of the contract you want to audit into the `source_code` field, and click **Execute**
-1. Wait for the transaction to reach `FINALIZED`, then go to **Read Methods** → `get_last_score` to read the result
+1. Wait for the transaction to reach `ACCEPTED`, then go to **Read Methods** → `get_last_score` to read the result
 
 ### Method 2: Local Web UI
 
 A local testing playground — paste any contract code, score it, and see the structured result right in the browser. Config lives in `.env`; no extra setup in the UI.
-
-> **Why local only?** GenLayer Studio runs on `localhost` — it can't be reached by a deployed web app like Vercel. The UI must run on the same machine as your GenLayer node.
 
 **1. Configure `.env`**
 
@@ -71,11 +69,34 @@ Opens at **http://localhost:3000**
 
 **3. Score a contract**
 
-Paste source code (or click **Load example**) and hit **Score Contract**. Live CLI output streams in the terminal panel below the editor; the structured audit result appears when the transaction finalizes.
+Paste source code (or click **Load example**) and hit **Score Contract**. The log panel streams live transaction status updates (`PENDING → PROPOSING → COMMITTING → REVEALING → ACCEPTED`); the structured audit result appears once the transaction is accepted.
 
 -----
 
-### Method 3: GenLayer CLI (Terminal)
+### Method 3: Deploy to Vercel
+
+The web UI can be deployed to Vercel. Each API request is short-lived (the frontend polls for status), so it works within Vercel's serverless function limits.
+
+**1. Set environment variables in Vercel**
+
+```
+PRIVATE_KEY=your_private_key_here
+RPC_URL=https://studio.genlayer.com/api
+CONTRACT_ADDRESS=0x_your_deployed_contract_address
+```
+
+> Use a public GenLayer endpoint for `RPC_URL` — `localhost` is not reachable from Vercel's servers. [GenLayer Studio](https://studio.genlayer.com) (`https://studio.genlayer.com/api`) works.
+
+**2. Deploy**
+
+```bash
+npm i -g vercel
+vercel
+```
+
+-----
+
+### Method 4: GenLayer CLI (Terminal)
 
 Requires [Node.js](https://nodejs.org) (v18+).
 
