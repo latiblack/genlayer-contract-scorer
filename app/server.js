@@ -31,7 +31,7 @@ function parseScoreResult(raw) {
   }
   text = text.replace(/\\n/g, '\n').trim();
 
-  const result = { raw: text, overall: null, quality: null, security: null, vulnerabilities: [] };
+  const result = { overall: null, quality: null, security: null, vulnerabilities: [] };
 
   const m = text.match(/Overall:\s*(\d+)\s*\|\s*Quality:\s*(\d+)\s*\|\s*Security:\s*(\d+)/i);
   if (m) {
