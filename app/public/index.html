@@ -466,11 +466,16 @@
     if (evtSrc) evtSrc.close();
     evtSrc = new EventSource(`/api/stream/${jobId}`);
 
+    // Track whether a result was successfully received so onerror doesn't
+    // show a false "connection lost" message when the server closes normally.
+    let resultReceived = false;
+
     evtSrc.onmessage = e => {
       const msg = JSON.parse(e.data);
       if (msg.type === 'log') {
         appendLog(msg.text, msg.text.startsWith('[warn]'));
       } else if (msg.type === 'result') {
+        resultReceived = true;
         renderResult(msg.data);
         setScoring(false);
         show('refreshBtn');
@@ -483,9 +488,13 @@
     };
 
     evtSrc.onerror = () => {
-      showError('Connection to server lost. The scoring job may still be running — try "Refresh result" in a moment.');
+      // onerror fires whenever the server closes the SSE connection, even on
+      // a clean finish. Only report an error if we never got a result event.
       setScoring(false);
       show('refreshBtn');
+      if (!resultReceived) {
+        showError('Connection to server lost. The scoring job may still be running — try "Refresh result" in a moment.');
+      }
       evtSrc.close();
     };
   }
