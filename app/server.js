@@ -1,26 +1,36 @@
-require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { readFileSync } from 'fs';
+import crypto from 'crypto';
+import express from 'express';
+import { createClient, createAccount } from 'genlayer-js';
+import { localnet } from 'genlayer-js/chains';
+import { TransactionStatus } from 'genlayer-js/types';
 
-const express = require('express');
-const { spawn } = require('child_process');
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
+const __dirname = dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: join(__dirname, '..', '.env') });
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(join(__dirname, 'public')));
 
-const REPO_ROOT = path.join(__dirname, '..');
+const REPO_ROOT = join(__dirname, '..');
 const jobs = new Map();
 
+function makeClient() {
+  const rpcUrl = process.env.RPC_URL || 'http://localhost:8080';
+  const account = createAccount(process.env.PRIVATE_KEY);
+  return createClient({ chain: localnet, endpoint: rpcUrl, account });
+}
+
 function parseScoreResult(raw) {
-  // genlayer call may wrap the return value in JSON quotes with escaped \n
-  let text = raw.trim();
+  let text = typeof raw === 'string' ? raw : JSON.stringify(raw);
+  text = text.trim();
   if ((text.startsWith('"') && text.endsWith('"')) ||
       (text.startsWith("'") && text.endsWith("'"))) {
     try { text = JSON.parse(text); } catch { /* leave as-is */ }
   }
-  // Normalise literal \n sequences into real newlines
   text = text.replace(/\\n/g, '\n').trim();
 
   const result = { raw: text, overall: null, quality: null, security: null, vulnerabilities: [] };
@@ -46,7 +56,7 @@ function parseScoreResult(raw) {
 
 app.get('/api/example', (req, res) => {
   try {
-    const content = fs.readFileSync(path.join(REPO_ROOT, 'examples', 'bank_vault.py'), 'utf8');
+    const content = readFileSync(join(REPO_ROOT, 'examples', 'bank_vault.py'), 'utf8');
     res.json({ content });
   } catch {
     res.status(404).json({ error: 'Example file not found' });
@@ -60,17 +70,16 @@ app.post('/api/score', (req, res) => {
   if (!sourceCode) return res.status(400).json({ error: 'sourceCode is required' });
 
   const address = process.env.CONTRACT_ADDRESS || '';
-  const rpcUrl  = process.env.RPC_URL || 'http://localhost:8080';
   if (!address || address.startsWith('0x_')) {
     return res.status(400).json({ error: 'CONTRACT_ADDRESS is not set in .env' });
   }
 
   const jobId = crypto.randomBytes(8).toString('hex');
-  jobs.set(jobId, { address, rpcUrl, sourceCode });
+  jobs.set(jobId, { address, sourceCode });
   res.json({ jobId });
 });
 
-app.get('/api/stream/:jobId', (req, res) => {
+app.get('/api/stream/:jobId', async (req, res) => {
   const job = jobs.get(req.params.jobId);
   if (!job) return res.status(404).json({ error: 'Job not found' });
   jobs.delete(req.params.jobId);
@@ -83,118 +92,66 @@ app.get('/api/stream/:jobId', (req, res) => {
   const send = (type, payload) =>
     res.write(`data: ${JSON.stringify({ type, ...payload })}\n\n`);
 
-  const { address, rpcUrl, sourceCode } = job;
-  const childEnv = {
-    ...process.env,
-    PRIVATE_KEY: process.env.PRIVATE_KEY || '',
-    RPC_URL: rpcUrl,
-  };
+  const { address, sourceCode } = job;
+  try {
+    const client = makeClient();
+    const rpcUrl = process.env.RPC_URL || 'http://localhost:8080';
 
-  const pipeLines = (stream, tag) =>
-    stream.on('data', chunk =>
-      chunk.toString().split('\n').filter(l => l.trim())
-        .forEach(l => send('log', { text: tag ? `[${tag}] ${l}` : l }))
-    );
+    send('log', { text: `→ Sending score_contract transaction to ${address}` });
+    send('log', { text: `  RPC: ${rpcUrl}` });
 
-  send('log', { text: `→ genlayer write ${address} score_contract` });
-  send('log', { text: `  RPC: ${rpcUrl}` });
-
-  const write = spawn(
-    'genlayer', ['write', address, 'score_contract', '--args', JSON.stringify([sourceCode])],
-    { env: childEnv, cwd: REPO_ROOT }
-  );
-
-  // Without an 'error' handler the process emits an unhandled exception
-  // (e.g. ENOENT when genlayer CLI is not found) that crashes the server.
-  write.on('error', err => {
-    send('error', { message: `Failed to start genlayer: ${err.message}` });
-    res.end();
-  });
-
-  pipeLines(write.stdout, '');
-  pipeLines(write.stderr, 'warn');
-
-  write.on('close', code => {
-    if (code !== 0) {
-      send('error', { message: `genlayer write exited with code ${code}` });
-      return res.end();
-    }
-
-    send('log', { text: '→ Reading result from contract state…' });
-
-    const call = spawn(
-      'genlayer', ['call', address, 'get_last_score'],
-      { env: childEnv, cwd: REPO_ROOT }
-    );
-
-    call.on('error', err => {
-      send('error', { message: `Failed to start genlayer: ${err.message}` });
-      res.end();
+    const txHash = await client.writeContract({
+      address,
+      functionName: 'score_contract',
+      args: [sourceCode],
+      value: 0,
     });
 
-    let callStdout = '';
-    let callStderr = '';
+    send('log', { text: `→ Transaction submitted: ${txHash}` });
+    send('log', { text: '→ Waiting for FINALIZED status…' });
 
-    call.stdout.on('data', chunk => {
-      const text = chunk.toString();
-      callStdout += text;
-      text.split('\n').filter(l => l.trim()).forEach(l => send('log', { text: l }));
-    });
-    call.stderr.on('data', chunk => {
-      const text = chunk.toString();
-      callStderr += text;
-      text.split('\n').filter(l => l.trim()).forEach(l => send('log', { text: `[warn] ${l}` }));
+    await client.waitForTransactionReceipt({
+      hash: txHash,
+      status: TransactionStatus.FINALIZED,
+      retries: 120,
+      interval: 5000,
     });
 
-    call.on('close', callCode => {
-      if (callCode !== 0) {
-        send('error', { message: `genlayer call exited with code ${callCode}` });
-        return res.end();
-      }
-      // Some genlayer CLI versions write the return value to stderr instead of stdout
-      const callOutput = callStdout.trim() ? callStdout : callStderr;
-      console.log('[scorer] raw call stdout:', JSON.stringify(callStdout));
-      console.log('[scorer] raw call stderr:', JSON.stringify(callStderr));
-      if (!callOutput.trim()) {
-        send('error', { message: 'genlayer call returned empty output — transaction may not be finalised yet. Try "Refresh result" in a few seconds.' });
-        return res.end();
-      }
-      send('result', { data: parseScoreResult(callOutput) });
-      res.end();
-    });
-  });
+    send('log', { text: '→ Transaction finalized. Reading result…' });
 
-  req.on('close', () => write.kill());
+    const raw = await client.readContract({
+      address,
+      functionName: 'get_last_score',
+      args: [],
+    });
+
+    send('result', { data: parseScoreResult(raw) });
+  } catch (err) {
+    send('error', { message: err.message || String(err) });
+  }
+
+  res.end();
 });
 
 // ── Refresh (re-read state without re-scoring) ────────────────────────────────
 
-app.get('/api/result', (req, res) => {
+app.get('/api/result', async (req, res) => {
   const address = process.env.CONTRACT_ADDRESS || '';
-  const rpcUrl  = process.env.RPC_URL || 'http://localhost:8080';
   if (!address || address.startsWith('0x_')) {
     return res.status(400).json({ error: 'CONTRACT_ADDRESS is not set in .env' });
   }
 
-  const childEnv = { ...process.env, RPC_URL: rpcUrl };
-  const call = spawn('genlayer', ['call', address, 'get_last_score'], {
-    env: childEnv,
-    cwd: REPO_ROOT,
-  });
-
-  call.on('error', err => res.status(500).json({ error: `Failed to start genlayer: ${err.message}` }));
-
-  let stdout = '';
-  let stderr = '';
-  call.stdout.on('data', chunk => { stdout += chunk.toString(); });
-  call.stderr.on('data', chunk => { stderr += chunk.toString(); });
-  call.on('close', code => {
-    if (code !== 0) return res.status(500).json({ error: 'genlayer call failed' });
-    const output = stdout.trim() ? stdout : stderr;
-    console.log('[scorer/refresh] stdout:', JSON.stringify(stdout));
-    console.log('[scorer/refresh] stderr:', JSON.stringify(stderr));
-    res.json({ data: parseScoreResult(output) });
-  });
+  try {
+    const client = makeClient();
+    const raw = await client.readContract({
+      address,
+      functionName: 'get_last_score',
+      args: [],
+    });
+    res.json({ data: parseScoreResult(raw) });
+  } catch (err) {
+    res.status(500).json({ error: err.message || String(err) });
+  }
 });
 
 const PORT = process.env.PORT || 3000;
