@@ -104,6 +104,13 @@ app.get('/api/stream/:jobId', (req, res) => {
     { env: childEnv, cwd: REPO_ROOT }
   );
 
+  // Without an 'error' handler the process emits an unhandled exception
+  // (e.g. ENOENT when genlayer CLI is not found) that crashes the server.
+  write.on('error', err => {
+    send('error', { message: `Failed to start genlayer: ${err.message}` });
+    res.end();
+  });
+
   pipeLines(write.stdout, '');
   pipeLines(write.stderr, 'warn');
 
@@ -119,6 +126,11 @@ app.get('/api/stream/:jobId', (req, res) => {
       'genlayer', ['call', address, 'get_last_score'],
       { env: childEnv, cwd: REPO_ROOT }
     );
+
+    call.on('error', err => {
+      send('error', { message: `Failed to start genlayer: ${err.message}` });
+      res.end();
+    });
 
     let callStdout = '';
     let callStderr = '';
@@ -169,6 +181,8 @@ app.get('/api/result', (req, res) => {
     env: childEnv,
     cwd: REPO_ROOT,
   });
+
+  call.on('error', err => res.status(500).json({ error: `Failed to start genlayer: ${err.message}` }));
 
   let stdout = '';
   let stderr = '';
