@@ -108,16 +108,16 @@ app.get('/api/stream/:jobId', async (req, res) => {
     });
 
     send('log', { text: `→ Transaction submitted: ${txHash}` });
-    send('log', { text: '→ Waiting for FINALIZED status…' });
+    send('log', { text: '→ Waiting for ACCEPTED status…' });
 
     await client.waitForTransactionReceipt({
       hash: txHash,
-      status: TransactionStatus.FINALIZED,
+      status: TransactionStatus.ACCEPTED,
       retries: 120,
       interval: 5000,
     });
 
-    send('log', { text: '→ Transaction finalized. Reading result…' });
+    send('log', { text: '→ Transaction accepted. Reading result…' });
 
     const raw = await client.readContract({
       address,
