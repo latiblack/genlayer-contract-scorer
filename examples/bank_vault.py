@@ -1,9 +1,8 @@
 # { "Depends": "py-genlayer:test" }
-import genlayer as gl
-from genlayer.types import *
+from genlayer import *
 
 
-class BankVault(gl.contract.Contract):
+class BankVault(gl.Contract):
 	"""
 	Example contract used to test the ContractScorer.
 	This contract is intentionally flawed to demonstrate
