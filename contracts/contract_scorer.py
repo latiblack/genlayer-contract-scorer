@@ -1,7 +1,7 @@
 # { "Depends": "py-genlayer:test" }
-from genlayer import *
-
 import json
+from dataclasses import dataclass
+from genlayer import *
 
 
 @allow_storage
