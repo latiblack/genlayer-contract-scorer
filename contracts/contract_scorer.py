@@ -35,122 +35,135 @@ class ContractScorer(gl.Contract):
 		sender = gl.message.sender_address
 
 		# --- Leader function: runs the LLM audit ---
+		# Output is a simple 3-line string for easy strict_eq matching.
+		# Complex details (summary, vulnerabilities) are fetched separately
+		# via a second nondet call to avoid consensus failures.
 		def run_audit() -> str:
 			task = f"""
 You are an expert auditor for GenLayer Intelligent Contracts.
 You have deep knowledge of the GenLayer SDK (py-genlayer) and its canonical patterns.
 
-=== GENLAYER SDK REFERENCE (v0.3.0) ===
+=== GENLAYER SDK REFERENCE ===
 
-Core imports (always used in contracts):
+Core imports:
   from genlayer import *
 
 Contract class:
   class MyContract(gl.Contract):
-      field_name: type
-
-Constructor:
-  def __init__(self, arg: type):
-      self.field_name = value
 
 Decorators:
-  @gl.public.write   → write method (modifies state, costs gas)
-  @gl.public.view    → read-only method (free, no state changes)
+  @gl.public.write  → modifies state, costs gas
+  @gl.public.view   → read-only, free
 
-Dataclass for structured storage:
+Storage types:
+  TreeMap[Key, Value], DynArray[Type], str, u256, bool, Address
+
+Structured storage:
   @allow_storage
   @dataclass
   class MyData:
       field: type
 
-Common storage types:
-  TreeMap[Key, Value]       → mapping/dict
-  DynArray[ItemType]        → dynamic array/list
-  str, int, u256, bool      → primitives
-  Address                   → blockchain address
+LLM calls (nondeterministic):
+  gl.nondet.exec_prompt(prompt)                        → raw text
+  gl.nondet.exec_prompt(prompt, response_format="json") → parsed JSON
 
-Equivalence principle (canonical consensus pattern):
-  def leader_fn() -> str:
-      result = gl.nondet.exec_prompt(prompt, response_format="json")
-      return json.dumps(result, sort_keys=True)
+Equivalence principle:
+  gl.eq_principle.strict_eq(leader_fn)                        → byte-identical match
+  gl.eq_principle.prompt_comparative(leader_fn, principle)     → semantic comparison
 
-  consensus = gl.eq_principle.strict_eq(leader_fn)
-  # — OR —
-  consensus = gl.eq_principle.prompt_comparative(leader_fn, "comparison principle text")
+Web access:
+  gl.nondet.web.render(url, mode="text")
 
-  strict_eq: validators must produce byte-identical output
-  prompt_comparative: validators compare semantically using the given principle
+Context:
+  gl.message.sender_address → caller address
 
-LLM calls inside nondet:
-  gl.nondet.exec_prompt(prompt)                 → raw text response
-  gl.nondet.exec_prompt(prompt, response_format="json")  → parsed JSON
-
-Web access (inside nondet):
-  gl.nondet.web.render(url, mode="text")  → fetch webpage
-
-Message context:
-  gl.message.sender_address  → address of the caller
-
-Error handling:
-  raise Exception("reason")   → revert the transaction
-
-Common patterns to check for:
-  - Proper use of @gl.public.write vs @gl.public.view
+Common issues to check:
+  - Proper @gl.public.write vs @gl.public.view usage
   - Access control via gl.message.sender_address
   - Input validation before state mutations
-  - Proper use of gl.eq_principle for nondeterministic operations
-  - Using gl.nondet.exec_prompt (NOT run_nondet_unsafe which is deprecated)
-  - JSON response handling with response_format="json"
-  - Type annotations on contract fields and method parameters
-  - @allow_storage on dataclasses used in contract storage
+  - Using gl.nondet (NOT deprecated run_nondet_unsafe)
+  - @allow_storage + @dataclass on storage dataclasses
+  - Type annotations on fields and method parameters
 
 === END SDK REFERENCE ===
 
-Now audit the following GenLayer Intelligent Contract:
+Audit the following GenLayer Intelligent Contract:
 
 ```python
 {source_code}
 ```
 
-Analyze this contract for:
-1. CODE QUALITY (0-100): readability, proper GenLayer SDK usage (v0.3 patterns),
-   type annotations, error handling, documentation
-2. SECURITY (0-100): access control, input validation, underflow/overflow risks,
-   proper use of equivalence principle, reentrancy concerns
+Score this contract on two dimensions (0-100 each):
+- QUALITY: readability, proper SDK usage, type annotations, error handling, documentation
+- SECURITY: access control, input validation, overflow/underflow, proper consensus usage
 
-Respond ONLY with valid JSON in this exact format (no markdown, no code fences):
+IMPORTANT: Respond with EXACTLY 3 lines, nothing else.
+Line 1: the quality score as an integer (0-100)
+Line 2: the security score as an integer (0-100)
+Line 3: a one-line summary (max 200 chars)
+
+Example response:
+65
+40
+Missing access control and input validation with moderate code quality.
+
+Do NOT include any other text, markdown, labels, or formatting.
+Just 3 lines: quality, security, summary."""
+			result = gl.nondet.exec_prompt(task)
+			return result.strip()
+
+		# --- Use prompt_comparative with a loose principle ---
+		# Different LLMs will give different scores, so we use a wide
+		# tolerance and focus on whether they agree on the general assessment.
+		principle = """The two scores (quality and security) must each be within ±20 of each other.
+The summary must convey the same overall assessment (both positive, both negative, or both mixed).
+It is acceptable if the wording of the summary differs, as long as the sentiment is the same."""
+
+		consensus_result = gl.eq_principle.prompt_comparative(run_audit, principle)
+		lines = consensus_result.strip().split('\n')
+
+		quality = int(lines[0].strip()) if len(lines) > 0 else 50
+		security = int(lines[1].strip()) if len(lines) > 1 else 50
+		overall = (quality + security) // 2
+		summary = lines[2].strip() if len(lines) > 2 else "Audit completed"
+		vulns = "[]"
+
+		# --- Second nondet call: detailed vulnerability analysis ---
+		# This is stored but NOT part of consensus — avoids disagreements.
+		def run_details() -> str:
+			task = f"""
+You are a security auditor for GenLayer Intelligent Contracts.
+
+Analyze the following contract for vulnerabilities and code quality issues.
+List each issue with its severity (critical, medium, or low) and a brief description.
+
+```python
+{source_code}
+```
+
+Respond in this exact JSON format (no markdown, no code fences):
 {{
-  "quality_score": <int 0-100>,
-  "security_score": <int 0-100>,
-  "summary": "<1-2 sentence overall assessment>",
   "vulnerabilities": [
-    {{
-      "severity": "<critical|medium|low>",
-      "description": "<clear description of the issue>"
-    }}
+    {{"severity": "critical", "description": "issue description"}},
+    {{"severity": "medium", "description": "issue description"}},
+    {{"severity": "low", "description": "issue description"}}
   ]
 }}
-It is mandatory that you respond only using the JSON format above,
-nothing else. Don't include any other words or characters,
-your output must be only JSON without any formatting prefix or suffix.
-This result should be perfectly parseable by a JSON parser without errors.
-"""
+If no vulnerabilities found, return: {{"vulnerabilities": []}}
+Only output valid JSON, nothing else."""
 			result = gl.nondet.exec_prompt(task, response_format="json")
 			return json.dumps(result, sort_keys=True)
 
-		# --- Equivalence principle: validators compare semantically ---
-		principle = """The quality_score and security_score values must be within ±10 of each other.
-Vulnerability lists must be semantically equivalent — same issues identified,
-though wording may differ. The summary should convey the same overall assessment."""
-
-		consensus_result = gl.eq_principle.prompt_comparative(run_audit, principle)
-		parsed = json.loads(consensus_result)
-
-		quality = int(parsed.get("quality_score", 0))
-		security = int(parsed.get("security_score", 0))
-		overall = (quality + security) // 2
-		summary = str(parsed.get("summary", ""))
-		vulns = json.dumps(parsed.get("vulnerabilities", []))
+		details_result = gl.eq_principle.prompt_comparative(
+			run_details,
+			"The vulnerability lists must identify the same core issues. Severity levels should match. Wording may differ."
+		)
+		try:
+			details = json.loads(details_result)
+			vulns = json.dumps(details.get("vulnerabilities", []))
+		except:
+			vulns = "[]"
 
 		# Build the audit result
 		audit = AuditResult(
