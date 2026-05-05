@@ -8,19 +8,20 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:      #0f172a;
+      --bg: #0f172a;
       --surface: #1e293b;
-      --raised:  #293548;
-      --border:  #334155;
+      --raised: #293548;
+      --border: #334155;
       --primary: #6366f1;
-      --text:    #f1f5f9;
-      --muted:   #94a3b8;
-      --good:    #22c55e;
-      --warn:    #eab308;
-      --bad:     #ef4444;
-      --mono:    'Cascadia Code','Fira Code','Consolas',monospace;
-      --sans:    'Segoe UI',system-ui,-apple-system,sans-serif;
-      --r:       8px;
+      --primary-dim: rgba(99,102,241,.12);
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --good: #22c55e;
+      --warn: #eab308;
+      --bad: #ef4444;
+      --mono: 'Cascadia Code','Fira Code','Consolas',monospace;
+      --sans: 'Segoe UI',system-ui,-apple-system,sans-serif;
+      --r: 8px;
     }
 
     body {
@@ -50,6 +51,18 @@
     }
     header h1 { font-size: 16px; font-weight: 600; }
     header p  { font-size: 12px; color: var(--muted); }
+
+    /* ── Version badge ── */
+    .version-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--primary-dim);
+      color: #a5b4fc;
+      border: 1px solid rgba(99,102,241,.25);
+      margin-left: auto;
+    }
 
     /* ── Layout ── */
     .main {
@@ -150,13 +163,6 @@
       border: 1px solid rgba(239,68,68,.25);
       color: #fca5a5;
     }
-    .notice-warn {
-      background: rgba(234,179,8,.08);
-      border: 1px solid rgba(234,179,8,.25);
-      color: #fde68a;
-      font-size: 12px;
-      margin-bottom: 4px;
-    }
 
     /* ── Terminal log ── */
     .log {
@@ -201,7 +207,7 @@
     }
     .score-num.good { color: var(--good); }
     .score-num.mid  { color: var(--warn); }
-    .score-num.bad  { color: var(--bad);  }
+    .score-num.bad  { color: var(--bad); }
     .score-bar-track {
       height: 4px;
       background: var(--raised);
@@ -215,7 +221,19 @@
     }
     .score-bar-fill.good { background: var(--good); }
     .score-bar-fill.mid  { background: var(--warn); }
-    .score-bar-fill.bad  { background: var(--bad);  }
+    .score-bar-fill.bad  { background: var(--bad); }
+
+    /* ── Summary text ── */
+    .summary-text {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 16px;
+      font-style: italic;
+      padding: 8px 12px;
+      background: var(--bg);
+      border-radius: var(--r);
+      border-left: 3px solid var(--primary);
+    }
 
     /* ── Verdict badge ── */
     .verdict {
@@ -229,9 +247,9 @@
       letter-spacing: .04em;
       margin-bottom: 20px;
     }
-    .verdict.good { background: rgba(34,197,94,.12);  color: #86efac; border: 1px solid rgba(34,197,94,.25); }
+    .verdict.good { background: rgba(34,197,94,.12); color: #86efac; border: 1px solid rgba(34,197,94,.25); }
     .verdict.mid  { background: rgba(234,179,8,.12); color: #fde68a; border: 1px solid rgba(234,179,8,.25); }
-    .verdict.bad  { background: rgba(239,68,68,.12);  color: #fca5a5; border: 1px solid rgba(239,68,68,.25); }
+    .verdict.bad  { background: rgba(239,68,68,.12); color: #fca5a5; border: 1px solid rgba(239,68,68,.25); }
 
     /* ── Vulnerabilities ── */
     .vuln-header {
@@ -251,8 +269,8 @@
       border-radius: 4px;
     }
     .vuln-count-badge.critical { background: rgba(239,68,68,.15); color: #fca5a5; }
-    .vuln-count-badge.medium   { background: rgba(234,179,8,.15); color: #fde68a; }
-    .vuln-count-badge.low      { background: rgba(34,197,94,.15); color: #bbf7d0; }
+    .vuln-count-badge.medium  { background: rgba(234,179,8,.15); color: #fde68a; }
+    .vuln-count-badge.low     { background: rgba(34,197,94,.15); color: #bbf7d0; }
 
     .vuln-list { display: flex; flex-direction: column; gap: 6px; }
     .vuln-item {
@@ -265,8 +283,8 @@
       border-left: 3px solid transparent;
     }
     .vuln-item.critical { border-color: var(--bad); }
-    .vuln-item.medium   { border-color: var(--warn); }
-    .vuln-item.low      { border-color: var(--good); }
+    .vuln-item.medium  { border-color: var(--warn); }
+    .vuln-item.low     { border-color: var(--good); }
     .vuln-badge {
       flex-shrink: 0;
       font-size: 10px; font-weight: 700;
@@ -276,8 +294,8 @@
       margin-top: 2px;
     }
     .critical .vuln-badge { background: rgba(239,68,68,.18); color: #fca5a5; }
-    .medium   .vuln-badge { background: rgba(234,179,8,.18);  color: #fde68a; }
-    .low      .vuln-badge { background: rgba(34,197,94,.18);  color: #bbf7d0; }
+    .medium .vuln-badge   { background: rgba(234,179,8,.18); color: #fde68a; }
+    .low .vuln-badge      { background: rgba(34,197,94,.18); color: #bbf7d0; }
     .vuln-desc { font-size: 13px; line-height: 1.4; }
 
     .no-vulns {
@@ -292,14 +310,31 @@
       border: 1px solid rgba(34,197,94,.2);
     }
 
-    /* ── Divider ── */
-    .divider {
-      height: 1px;
-      background: var(--border);
-      margin: 20px 0;
+    /* ── History ── */
+    .history-list { display: flex; flex-direction: column; gap: 10px; }
+    .history-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 14px;
+      cursor: pointer;
+      transition: border-color .15s;
     }
+    .history-item:hover { border-color: var(--primary); }
+    .history-meta {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .history-scores {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .history-scores span { opacity: .8; }
 
-.hidden { display: none !important; }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
@@ -309,8 +344,9 @@
   <div class="logo">⬡</div>
   <div>
     <h1>GenLayer Contract Scorer</h1>
-    <p>Audit Intelligent Contracts with an on-chain LLM</p>
+    <p>Audit Intelligent Contracts with on-chain LLM consensus</p>
   </div>
+  <span class="version-badge">v0.3.0 SDK</span>
 </header>
 
 <!-- ── Main ── -->
@@ -333,6 +369,9 @@
       <button class="btn btn-ghost btn-sm hidden" id="refreshBtn" onclick="refreshResult()">
         ↻ Refresh result
       </button>
+      <button class="btn btn-ghost btn-sm" id="historyBtn" onclick="loadHistory()">
+        📋 History
+      </button>
     </div>
   </div>
 
@@ -351,6 +390,9 @@
 
     <!-- Verdict -->
     <div id="verdictBadge" class="verdict hidden"></div>
+
+    <!-- Summary -->
+    <div class="summary-text hidden" id="summaryText"></div>
 
     <!-- Scores -->
     <div class="scores" id="scoresGrid">
@@ -382,6 +424,14 @@
 
     <div class="no-vulns hidden" id="noVulns">✓ No vulnerabilities detected</div>
 
+  </div>
+
+  <!-- ── Audit History ── -->
+  <div class="card hidden" id="historyCard">
+    <div class="card-title">Audit History</div>
+    <div class="history-list" id="historyList">
+      <div style="color:var(--muted);font-size:13px">No audits yet.</div>
+    </div>
   </div>
 
 </div>
@@ -474,14 +524,56 @@
     renderResult(data);
   }
 
+  // ── History ──────────────────────────────────────────────────────────────────
+  async function loadHistory() {
+    hideError();
+    const res = await fetch('/api/history');
+    if (!res.ok) { showError('Failed to load audit history.'); return; }
+    const { audits } = await res.json();
+    const container = document.getElementById('historyList');
+
+    if (!audits || audits.length === 0) {
+      container.innerHTML = '<div style="color:var(--muted);font-size:13px">No audits yet. Submit your first contract above!</div>';
+      show('historyCard');
+      return;
+    }
+
+    container.innerHTML = audits.slice().reverse().map(a => `
+      <div class="history-item" onclick='renderResult(${JSON.stringify(a).replace(/'/g, "&#39;")})'>
+        <div class="history-meta">Audit #${a.id}</div>
+        <div class="history-scores">
+          <span style="color:${gradeColor(a.overall)}">Overall: ${a.overall ?? '?'}</span>
+          <span style="color:${gradeColor(a.quality)}">Quality: ${a.quality ?? '?'}</span>
+          <span style="color:${gradeColor(a.security)}">Security: ${a.security ?? '?'}</span>
+        </div>
+        ${a.summary ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">${esc(a.summary)}</div>` : ''}
+      </div>
+    `).join('');
+
+    show('historyCard');
+  }
+
+  function gradeColor(score) {
+    if (score == null) return 'var(--muted)';
+    return score >= 70 ? 'var(--good)' : score >= 40 ? 'var(--warn)' : 'var(--bad)';
+  }
+
   // ── Render result ────────────────────────────────────────────────────────────
   function renderResult(data) {
     show('resultCard');
 
+    // ── Summary ──
+    if (data.summary) {
+      document.getElementById('summaryText').textContent = data.summary;
+      show('summaryText');
+    } else {
+      hide('summaryText');
+    }
+
     // ── Scores ──
     if (data.overall !== null) {
-      setScore('sOverall',  'bOverall',  data.overall);
-      setScore('sQuality',  'bQuality',  data.quality);
+      setScore('sOverall', 'bOverall', data.overall);
+      setScore('sQuality', 'bQuality', data.quality);
       setScore('sSecurity', 'bSecurity', data.security);
       show('scoresGrid');
 
@@ -546,6 +638,7 @@
   function clearResult() {
     hide('resultCard');
     hide('verdictBadge');
+    hide('summaryText');
     hide('noVulns');
     document.getElementById('vulnList').innerHTML = '';
     document.getElementById('vulnCounts').innerHTML = '';
@@ -594,7 +687,7 @@
   // ── Utils ────────────────────────────────────────────────────────────────────
   const show = id => document.getElementById(id).classList.remove('hidden');
   const hide = id => document.getElementById(id).classList.add('hidden');
-  const esc  = s  => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 </script>
 </body>
 </html>

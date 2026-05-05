@@ -22,24 +22,43 @@ function makeClient() {
   return createClient({ chain: localnet, endpoint: rpcUrl, account });
 }
 
+/**
+ * Parse the structured audit result string from the contract.
+ * The contract returns format:
+ *   Overall: 60 | Quality: 70 | Security: 50
+ *   Summary: <text>
+ *   Vulnerabilities:
+ *     [CRITICAL] <desc>
+ *     [MEDIUM] <desc>
+ *     [LOW] <desc>
+ */
 function parseScoreResult(raw) {
   let text = typeof raw === 'string' ? raw : JSON.stringify(raw);
   text = text.trim();
+  // Strip surrounding quotes if present
   if ((text.startsWith('"') && text.endsWith('"')) ||
       (text.startsWith("'") && text.endsWith("'"))) {
     try { text = JSON.parse(text); } catch { /* leave as-is */ }
   }
   text = text.replace(/\\n/g, '\n').trim();
 
-  const result = { overall: null, quality: null, security: null, vulnerabilities: [] };
+  const result = { overall: null, quality: null, security: null, summary: '', vulnerabilities: [] };
 
+  // Extract scores
   const m = text.match(/Overall:\s*(\d+)\s*\|\s*Quality:\s*(\d+)\s*\|\s*Security:\s*(\d+)/i);
   if (m) {
-    result.overall  = parseInt(m[1]);
-    result.quality  = parseInt(m[2]);
+    result.overall = parseInt(m[1]);
+    result.quality = parseInt(m[2]);
     result.security = parseInt(m[3]);
   }
 
+  // Extract summary line
+  const sm = text.match(/Summary:\s*(.+)/i);
+  if (sm) {
+    result.summary = sm[1].trim();
+  }
+
+  // Extract vulnerabilities
   result.vulnerabilities = (text.match(/\[(CRITICAL|MEDIUM|LOW)\][^\n]*/gi) || [])
     .map(line => {
       const v = line.match(/\[(CRITICAL|MEDIUM|LOW)\]\s*(.+)/i);
@@ -66,6 +85,9 @@ const FAILED = new Set([
   TransactionStatus.VALIDATORS_TIMEOUT,
 ]);
 
+// Track request IDs per address (client-side mapping)
+const addressRequestIdMap = new Map();
+
 // ── Example contract ──────────────────────────────────────────────────────────
 
 app.get('/api/example', (req, res) => {
@@ -77,7 +99,7 @@ app.get('/api/example', (req, res) => {
   }
 });
 
-// ── Submit transaction ────────────────────────────────────────────────────────
+// ── Submit audit transaction ──────────────────────────────────────────────────
 
 app.post('/api/score', async (req, res) => {
   const { sourceCode } = req.body;
@@ -103,7 +125,6 @@ app.post('/api/score', async (req, res) => {
 });
 
 // ── Poll transaction status ───────────────────────────────────────────────────
-// Returns { status, done, result? } — each call is short-lived (<2 s).
 
 app.get('/api/status/:txHash', async (req, res) => {
   const address = process.env.CONTRACT_ADDRESS || '';
@@ -122,10 +143,12 @@ app.get('/api/status/:txHash', async (req, res) => {
     }
 
     if (done) {
+      // Read the latest audit for the configured account
+      const account = createAccount(process.env.PRIVATE_KEY);
       const raw = await client.readContract({
         address,
-        functionName: 'get_last_score',
-        args: [],
+        functionName: 'get_latest_audit',
+        args: [account.address],
       });
       return res.json({ status, done: true, result: parseScoreResult(raw) });
     }
@@ -136,7 +159,7 @@ app.get('/api/status/:txHash', async (req, res) => {
   }
 });
 
-// ── Refresh (re-read state without re-scoring) ────────────────────────────────
+// ── Get latest audit result (re-read without re-scoring) ─────────────────────
 
 app.get('/api/result', async (req, res) => {
   const address = process.env.CONTRACT_ADDRESS || '';
@@ -146,10 +169,11 @@ app.get('/api/result', async (req, res) => {
 
   try {
     const client = makeClient();
+    const account = createAccount(process.env.PRIVATE_KEY);
     const raw = await client.readContract({
       address,
-      functionName: 'get_last_score',
-      args: [],
+      functionName: 'get_latest_audit',
+      args: [account.address],
     });
     res.json({ data: parseScoreResult(raw) });
   } catch (err) {
@@ -157,9 +181,50 @@ app.get('/api/result', async (req, res) => {
   }
 });
 
+// ── Get audit history for the configured account ─────────────────────────────
+
+app.get('/api/history', async (req, res) => {
+  const address = process.env.CONTRACT_ADDRESS || '';
+  if (!address || address.startsWith('0x_')) {
+    return res.status(400).json({ error: 'CONTRACT_ADDRESS is not set in .env' });
+  }
+
+  try {
+    const client = makeClient();
+    const account = createAccount(process.env.PRIVATE_KEY);
+
+    // Get count first
+    const count = await client.readContract({
+      address,
+      functionName: 'get_audit_count',
+      args: [account.address],
+    });
+
+    const numAudits = parseInt(count) || 0;
+    const audits = [];
+
+    for (let i = 0; i < numAudits; i++) {
+      try {
+        const raw = await client.readContract({
+          address,
+          functionName: 'get_audit',
+          args: [account.address, i],
+        });
+        audits.push({ id: i, ...parseScoreResult(raw) });
+      } catch {
+        break; // stop if we hit an invalid index
+      }
+    }
+
+    res.json({ audits, count: numAudits });
+  } catch (err) {
+    res.status(500).json({ error: err.message || String(err) });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`\nGenLayer Contract Scorer  →  http://localhost:${PORT}`);
+  console.log(`\nGenLayer Contract Scorer → http://localhost:${PORT}`);
   console.log(`Contract : ${process.env.CONTRACT_ADDRESS || '(not set — add CONTRACT_ADDRESS to .env)'}`);
   console.log(`RPC      : ${process.env.RPC_URL || 'http://localhost:8080'}\n`);
 });
