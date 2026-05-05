@@ -34,138 +34,72 @@ class ContractScorer(gl.Contract):
 
 		sender = gl.message.sender_address
 
-		# --- Leader function: runs the LLM audit ---
-		# Output is a simple 3-line string for easy strict_eq matching.
-		# Complex details (summary, vulnerabilities) are fetched separately
-		# via a second nondet call to avoid consensus failures.
-		def run_audit() -> str:
+		def get_audit_result() -> str:
 			task = f"""
 You are an expert auditor for GenLayer Intelligent Contracts.
-You have deep knowledge of the GenLayer SDK (py-genlayer) and its canonical patterns.
 
-=== GENLAYER SDK REFERENCE ===
-
-Core imports:
-  from genlayer import *
-
-Contract class:
-  class MyContract(gl.Contract):
-
-Decorators:
-  @gl.public.write  → modifies state, costs gas
-  @gl.public.view   → read-only, free
-
-Storage types:
-  TreeMap[Key, Value], DynArray[Type], str, u256, bool, Address
-
-Structured storage:
-  @allow_storage
-  @dataclass
-  class MyData:
-      field: type
-
-LLM calls (nondeterministic):
-  gl.nondet.exec_prompt(prompt)                        → raw text
-  gl.nondet.exec_prompt(prompt, response_format="json") → parsed JSON
-
-Equivalence principle:
-  gl.eq_principle.strict_eq(leader_fn)                        → byte-identical match
-  gl.eq_principle.prompt_comparative(leader_fn, principle)     → semantic comparison
-
-Web access:
-  gl.nondet.web.render(url, mode="text")
-
-Context:
-  gl.message.sender_address → caller address
-
-Common issues to check:
-  - Proper @gl.public.write vs @gl.public.view usage
-  - Access control via gl.message.sender_address
-  - Input validation before state mutations
-  - Using gl.nondet (NOT deprecated run_nondet_unsafe)
-  - @allow_storage + @dataclass on storage dataclasses
-  - Type annotations on fields and method parameters
-
-=== END SDK REFERENCE ===
-
-Audit the following GenLayer Intelligent Contract:
+Audit the following GenLayer contract for code quality and security:
 
 ```python
 {source_code}
 ```
 
-Score this contract on two dimensions (0-100 each):
-- QUALITY: readability, proper SDK usage, type annotations, error handling, documentation
-- SECURITY: access control, input validation, overflow/underflow, proper consensus usage
+Rate each dimension from 0 to 100:
+- quality: readability, SDK usage, type annotations, error handling
+- security: access control, input validation, overflow risks
 
-IMPORTANT: Respond with EXACTLY 3 lines, nothing else.
-Line 1: the quality score as an integer (0-100)
-Line 2: the security score as an integer (0-100)
-Line 3: a one-line summary (max 200 chars)
+Respond with ONLY this JSON format, nothing else:
+{{
+  "quality": <int 0-100>,
+  "security": <int 0-100>,
+  "summary": "<one sentence assessment>"
+}}
+No markdown, no code fences, no extra text. Just the JSON object."""
+			result = gl.exec_prompt(task)
+			result = result.replace("```json", "").replace("```", "")
+			return json.dumps(json.loads(result), sort_keys=True)
 
-Example response:
-65
-40
-Missing access control and input validation with moderate code quality.
+		consensus_result = gl.eq_principle_strict_eq(get_audit_result)
+		parsed = json.loads(consensus_result)
 
-Do NOT include any other text, markdown, labels, or formatting.
-Just 3 lines: quality, security, summary."""
-			result = gl.nondet.exec_prompt(task)
-			return result.strip()
-
-		# --- Use prompt_comparative with a loose principle ---
-		# Different LLMs will give different scores, so we use a wide
-		# tolerance and focus on whether they agree on the general assessment.
-		principle = """The two scores (quality and security) must each be within ±20 of each other.
-The summary must convey the same overall assessment (both positive, both negative, or both mixed).
-It is acceptable if the wording of the summary differs, as long as the sentiment is the same."""
-
-		consensus_result = gl.eq_principle.prompt_comparative(run_audit, principle)
-		lines = consensus_result.strip().split('\n')
-
-		quality = int(lines[0].strip()) if len(lines) > 0 else 50
-		security = int(lines[1].strip()) if len(lines) > 1 else 50
+		quality = int(parsed.get("quality", 0))
+		security = int(parsed.get("security", 0))
 		overall = (quality + security) // 2
-		summary = lines[2].strip() if len(lines) > 2 else "Audit completed"
-		vulns = "[]"
+		summary = str(parsed.get("summary", ""))
 
-		# --- Second nondet call: detailed vulnerability analysis ---
-		# This is stored but NOT part of consensus — avoids disagreements.
-		def run_details() -> str:
+		# Get detailed vulnerabilities separately (no strict consensus)
+		def get_vulns() -> str:
 			task = f"""
-You are a security auditor for GenLayer Intelligent Contracts.
-
-Analyze the following contract for vulnerabilities and code quality issues.
-List each issue with its severity (critical, medium, or low) and a brief description.
+You are a security auditor. Analyze this GenLayer contract for vulnerabilities:
 
 ```python
 {source_code}
 ```
 
-Respond in this exact JSON format (no markdown, no code fences):
+List issues as JSON:
 {{
   "vulnerabilities": [
-    {{"severity": "critical", "description": "issue description"}},
-    {{"severity": "medium", "description": "issue description"}},
-    {{"severity": "low", "description": "issue description"}}
+    {{"severity": "critical|medium|low", "description": "issue"}}
   ]
 }}
-If no vulnerabilities found, return: {{"vulnerabilities": []}}
-Only output valid JSON, nothing else."""
-			result = gl.nondet.exec_prompt(task, response_format="json")
-			return json.dumps(result, sort_keys=True)
+If no issues, return: {{"vulnerabilities": []}}
+Only JSON, no markdown, no code fences."""
+			result = gl.exec_prompt(task)
+			result = result.replace("```json", "").replace("```", "")
+			return json.dumps(json.loads(result), sort_keys=True)
 
-		details_result = gl.eq_principle.prompt_comparative(
-			run_details,
-			"The vulnerability lists must identify the same core issues. Severity levels should match. Wording may differ."
-		)
+		vulns = "[]"
 		try:
-			details = json.loads(details_result)
+			vulns_result = gl.eq_principle_prompt_comparative(
+				get_vulns,
+				"The same core vulnerability issues must be identified with matching severity levels. Wording may differ."
+			)
+			details = json.loads(vulns_result)
 			vulns = json.dumps(details.get("vulnerabilities", []))
 		except:
 			vulns = "[]"
 
-		# Build the audit result
+		# Build and store the audit result
 		audit = AuditResult(
 			overall=u256(overall),
 			quality=u256(quality),
@@ -174,7 +108,6 @@ Only output valid JSON, nothing else."""
 			vulnerabilities=vulns,
 		)
 
-		# Append to this user's audit history
 		if sender not in self.audits:
 			self.audits[sender] = []
 		self.audits[sender].append(audit)
