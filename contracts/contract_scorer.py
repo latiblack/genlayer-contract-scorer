@@ -55,11 +55,11 @@ Respond with ONLY this JSON format, nothing else:
   "summary": "<one sentence assessment>"
 }}
 No markdown, no code fences, no extra text. Just the JSON object."""
-			result = gl.exec_prompt(task)
+			result = gl.nondet.exec_prompt(task)
 			result = result.replace("```json", "").replace("```", "")
 			return json.dumps(json.loads(result), sort_keys=True)
 
-		consensus_result = gl.eq_principle_strict_eq(get_audit_result)
+		consensus_result = gl.eq_principle.strict_eq(get_audit_result)
 		parsed = json.loads(consensus_result)
 
 		quality = int(parsed.get("quality", 0))
@@ -84,13 +84,13 @@ List issues as JSON:
 }}
 If no issues, return: {{"vulnerabilities": []}}
 Only JSON, no markdown, no code fences."""
-			result = gl.exec_prompt(task)
+			result = gl.nondet.exec_prompt(task)
 			result = result.replace("```json", "").replace("```", "")
 			return json.dumps(json.loads(result), sort_keys=True)
 
 		vulns = "[]"
 		try:
-			vulns_result = gl.eq_principle_prompt_comparative(
+			vulns_result = gl.eq_principle.prompt_comparative(
 				get_vulns,
 				"The same core vulnerability issues must be identified with matching severity levels. Wording may differ."
 			)
