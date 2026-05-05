@@ -5,6 +5,7 @@ import json
 
 
 @allow_storage
+@dataclass
 class AuditResult:
 	"""Structured audit result stored per-request."""
 	overall: u256
