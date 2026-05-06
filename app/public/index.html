@@ -6,7 +6,6 @@
   <title>GenLayer Contract Scorer</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
       --bg: #0f172a;
       --surface: #1e293b;
@@ -23,406 +22,114 @@
       --sans: 'Segoe UI',system-ui,-apple-system,sans-serif;
       --r: 8px;
     }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--sans);
-      font-size: 14px;
-      line-height: 1.5;
-      min-height: 100vh;
-    }
-
-    /* ── Header ── */
-    header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 14px 28px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .logo {
-      width: 34px; height: 34px;
-      background: var(--primary);
-      border-radius: 6px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px; flex-shrink: 0;
-    }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.5; min-height: 100vh; }
+    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 28px; display: flex; align-items: center; gap: 12px; }
+    .logo { width: 34px; height: 34px; background: var(--primary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
     header h1 { font-size: 16px; font-weight: 600; }
-    header p  { font-size: 12px; color: var(--muted); }
-
-    /* ── Version badge ── */
-    .version-badge {
-      font-size: 10px;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 4px;
-      background: var(--primary-dim);
-      color: #a5b4fc;
-      border: 1px solid rgba(99,102,241,.25);
-    }
-
-    .wallet-address {
-      font-size: 11px;
-      font-family: var(--mono);
-      padding: 4px 10px;
-      border-radius: 4px;
-      background: var(--raised);
-      color: var(--text);
-    }
-
-    .header-right {
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .audit-count {
-      font-size: 12px;
-      padding: 4px 10px;
-      border-radius: 4px;
-      background: var(--raised);
-      color: var(--muted);
-    }
-
-    /* ── Layout ── */
-    .main {
-      max-width: 860px;
-      margin: 32px auto;
-      padding: 0 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    /* ── Cards ── */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 20px;
-    }
-    .card-title {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .07em;
-      color: var(--muted);
-      margin-bottom: 14px;
-    }
-
-    /* ── Inputs ── */
-    textarea {
-      width: 100%;
-      height: 280px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 12px;
-      color: var(--text);
-      font-family: var(--mono);
-      font-size: 12.5px;
-      line-height: 1.65;
-      resize: vertical;
-      outline: none;
-      transition: border-color .15s;
-    }
+    header p { font-size: 12px; color: var(--muted); }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .main { max-width: 860px; margin: 32px auto; padding: 0 24px; display: flex; flex-direction: column; gap: 20px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; }
+    .card-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 14px; }
+    textarea { width: 100%; height: 280px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--r); padding: 12px; color: var(--text); font-family: var(--mono); font-size: 12.5px; line-height: 1.65; resize: vertical; outline: none; }
     textarea:focus { border-color: var(--primary); }
-    textarea::placeholder { color: var(--muted); }
-
-    /* ── Toolbar ── */
-    .toolbar {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 10px;
-      flex-wrap: wrap;
-    }
-
-    /* ── Buttons ── */
-    .btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 8px 16px;
-      border-radius: var(--r);
-      border: none;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 500;
-      transition: opacity .15s, background .15s;
-    }
+    .toolbar { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--r); border: none; cursor: pointer; font-size: 13px; font-weight: 500; }
     .btn:disabled { opacity: .4; cursor: not-allowed; }
     .btn-primary { background: var(--primary); color: #fff; }
     .btn-primary:not(:disabled):hover { background: #818cf8; }
-    .btn-ghost {
-      background: var(--raised);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
+    .btn-ghost { background: var(--raised); color: var(--text); border: 1px solid var(--border); }
     .btn-ghost:not(:disabled):hover { background: var(--border); }
     .btn-sm { padding: 6px 12px; font-size: 12px; }
-
-    .spinner {
-      width: 13px; height: 13px;
-      border: 2px solid rgba(255,255,255,.3);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin .65s linear infinite;
-    }
+    .spinner { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .65s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── Notices ── */
-    .notice {
-      padding: 12px 16px;
-      border-radius: var(--r);
-      font-size: 13px;
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-    }
-    .notice-err {
-      background: rgba(239,68,68,.08);
-      border: 1px solid rgba(239,68,68,.25);
-      color: #fca5a5;
-    }
-
-    /* ── Terminal log ── */
-    .log {
-      background: #080f1a;
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 14px;
-      font-family: var(--mono);
-      font-size: 12px;
-      line-height: 1.75;
-      max-height: 220px;
-      overflow-y: auto;
-      color: #7dd3fc;
-    }
-    .log-warn { color: var(--warn); }
-
-    /* ── Score summary row ── */
-    .scores {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-    .score-card {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 18px 16px 14px;
-    }
-    .score-label {
-      font-size: 11px;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      margin-bottom: 10px;
-    }
-    .score-num {
-      font-size: 42px;
-      font-weight: 700;
-      line-height: 1;
-      margin-bottom: 10px;
-    }
+    .notice { padding: 12px 16px; border-radius: var(--r); font-size: 13px; display: flex; align-items: flex-start; gap: 10px; }
+    .notice-err { background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.25); color: #fca5a5; }
+    .log { background: #080f1a; border: 1px solid var(--border); border-radius: var(--r); padding: 14px; font-family: var(--mono); font-size: 12px; line-height: 1.75; max-height: 220px; overflow-y: auto; color: #7dd3fc; }
+    .scores { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+    .score-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--r); padding: 18px 16px 14px; }
+    .score-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+    .score-num { font-size: 42px; font-weight: 700; line-height: 1; margin-bottom: 10px; }
     .score-num.good { color: var(--good); }
-    .score-num.mid  { color: var(--warn); }
-    .score-num.bad  { color: var(--bad); }
-    .score-bar-track {
-      height: 4px;
-      background: var(--raised);
-      border-radius: 99px;
-      overflow: hidden;
-    }
-    .score-bar-fill {
-      height: 100%;
-      border-radius: 99px;
-      transition: width .6s ease;
-    }
+    .score-num.mid { color: var(--warn); }
+    .score-num.bad { color: var(--bad); }
+    .score-bar-track { height: 4px; background: var(--raised); border-radius: 99px; overflow: hidden; }
+    .score-bar-fill { height: 100%; border-radius: 99px; transition: width .6s ease; }
     .score-bar-fill.good { background: var(--good); }
-    .score-bar-fill.mid  { background: var(--warn); }
-    .score-bar-fill.bad  { background: var(--bad); }
-
-    /* ── Summary text ── */
-    .summary-text {
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 16px;
-      font-style: italic;
-      padding: 8px 12px;
-      background: var(--bg);
-      border-radius: var(--r);
-      border-left: 3px solid var(--primary);
-    }
-
-    /* ── Verdict badge ── */
-    .verdict {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 12px;
-      border-radius: 99px;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: .04em;
-      margin-bottom: 20px;
-    }
+    .score-bar-fill.mid { background: var(--warn); }
+    .score-bar-fill.bad { background: var(--bad); }
+    .summary-text { font-size: 13px; color: var(--muted); margin-bottom: 16px; font-style: italic; padding: 8px 12px; background: var(--bg); border-radius: var(--r); border-left: 3px solid var(--primary); }
+    .verdict { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; letter-spacing: .04em; margin-bottom: 20px; }
     .verdict.good { background: rgba(34,197,94,.12); color: #86efac; border: 1px solid rgba(34,197,94,.25); }
-    .verdict.mid  { background: rgba(234,179,8,.12); color: #fde68a; border: 1px solid rgba(234,179,8,.25); }
-    .verdict.bad  { background: rgba(239,68,68,.12); color: #fca5a5; border: 1px solid rgba(239,68,68,.25); }
-
-    /* ── Vulnerabilities ── */
-    .vuln-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
-    }
-    .vuln-counts {
-      display: flex;
-      gap: 8px;
-    }
-    .vuln-count-badge {
-      font-size: 11px;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 4px;
-    }
+    .verdict.mid { background: rgba(234,179,8,.12); color: #fde68a; border: 1px solid rgba(234,179,8,.25); }
+    .verdict.bad { background: rgba(239,68,68,.12); color: #fca5a5; border: 1px solid rgba(239,68,68,.25); }
+    .vuln-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .vuln-counts { display: flex; gap: 8px; }
+    .vuln-count-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
     .vuln-count-badge.critical { background: rgba(239,68,68,.15); color: #fca5a5; }
-    .vuln-count-badge.medium  { background: rgba(234,179,8,.15); color: #fde68a; }
-    .vuln-count-badge.low     { background: rgba(34,197,94,.15); color: #bbf7d0; }
-
+    .vuln-count-badge.medium { background: rgba(234,179,8,.15); color: #fde68a; }
+    .vuln-count-badge.low { background: rgba(34,197,94,.15); color: #bbf7d0; }
     .vuln-list { display: flex; flex-direction: column; gap: 6px; }
-    .vuln-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 10px 14px;
-      background: var(--bg);
-      border-radius: var(--r);
-      border-left: 3px solid transparent;
-    }
+    .vuln-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; background: var(--bg); border-radius: var(--r); border-left: 3px solid transparent; }
     .vuln-item.critical { border-color: var(--bad); }
-    .vuln-item.medium  { border-color: var(--warn); }
-    .vuln-item.low     { border-color: var(--good); }
-    .vuln-badge {
-      flex-shrink: 0;
-      font-size: 10px; font-weight: 700;
-      padding: 2px 7px;
-      border-radius: 4px;
-      text-transform: uppercase; letter-spacing: .05em;
-      margin-top: 2px;
-    }
+    .vuln-item.medium { border-color: var(--warn); }
+    .vuln-item.low { border-color: var(--good); }
+    .vuln-badge { flex-shrink: 0; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
     .critical .vuln-badge { background: rgba(239,68,68,.18); color: #fca5a5; }
-    .medium .vuln-badge   { background: rgba(234,179,8,.18); color: #fde68a; }
-    .low .vuln-badge      { background: rgba(34,197,94,.18); color: #bbf7d0; }
+    .medium .vuln-badge { background: rgba(234,179,8,.18); color: #fde68a; }
+    .low .vuln-badge { background: rgba(34,197,94,.18); color: #bbf7d0; }
     .vuln-desc { font-size: 13px; line-height: 1.4; }
-
-    .no-vulns {
-      color: var(--good);
-      font-size: 13px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 14px;
-      background: rgba(34,197,94,.06);
-      border-radius: var(--r);
-      border: 1px solid rgba(34,197,94,.2);
-    }
-
-    /* ── History ── */
+    .no-vulns { color: var(--good); font-size: 13px; display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: rgba(34,197,94,.06); border-radius: var(--r); border: 1px solid rgba(34,197,94,.2); }
     .history-list { display: flex; flex-direction: column; gap: 10px; }
-    .history-item {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 14px;
-      cursor: pointer;
-      transition: border-color .15s;
-    }
+    .history-item { background: var(--bg); border: 1px solid var(--border); border-radius: var(--r); padding: 14px; cursor: pointer; transition: border-color .15s; }
     .history-item:hover { border-color: var(--primary); }
-    .history-meta {
-      font-size: 11px;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
-    .history-scores {
-      display: flex;
-      gap: 12px;
-      font-size: 12px;
-      font-weight: 600;
-    }
+    .history-meta { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+    .history-scores { display: flex; gap: 12px; font-size: 12px; font-weight: 600; }
     .history-scores span { opacity: .8; }
-
     .hidden { display: none !important; }
   </style>
 </head>
 <body>
-
-<!-- ── Header ── -->
 <header>
   <div class="logo">⬡</div>
   <div>
     <h1>GenLayer Contract Scorer</h1>
     <p>Audit Intelligent Contracts with on-chain LLM consensus</p>
   </div>
-  <span class="version-badge">v0.3.0 SDK</span>
-  <button class="btn btn-ghost btn-sm" id="connectBtn" onclick="connectWallet()">
-    Connect Wallet
-  </button>
-  <span class="wallet-address hidden" id="walletAddr"></span>
+  <span class="version-badge" style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--primary-dim);color:#a5b4fc;border:1px solid rgba(99,102,241,.25)">v0.3.0 SDK</span>
+  <div class="header-right">
+    <button class="btn btn-ghost btn-sm" id="connectBtn" onclick="app.connectWallet()">Connect Wallet</button>
+    <span class="wallet-address hidden" id="walletAddr"></span>
+  </div>
 </header>
 
-<!-- ── Main ── -->
 <div class="main">
-
-  <!-- Error -->
   <div class="notice notice-err hidden" id="errorNotice"></div>
 
-  <!-- Source code input -->
   <div class="card">
     <div class="card-title">Contract Source Code</div>
     <textarea id="sourceCode" placeholder="Paste the full source code of the contract you want to audit…"></textarea>
     <div class="toolbar">
-      <button class="btn btn-primary" id="scoreBtn" onclick="scoreContract()">
-        Score Contract
-      </button>
-      <button class="btn btn-ghost btn-sm" onclick="loadExample()">
-        Load example (bank_vault.py)
-      </button>
-      <button class="btn btn-ghost btn-sm hidden" id="refreshBtn" onclick="refreshResult()">
-        ↻ Refresh result
-      </button>
-      <button class="btn btn-ghost btn-sm" id="historyBtn" onclick="loadHistory()">
-        📋 History
-      </button>
+      <button class="btn btn-primary" id="scoreBtn" onclick="app.scoreContract()">Score Contract</button>
+      <button class="btn btn-ghost btn-sm" onclick="app.loadExample()">Load example (bank_vault.py)</button>
+      <button class="btn btn-ghost btn-sm hidden" id="refreshBtn" onclick="app.refreshResult()">↻ Refresh result</button>
+      <button class="btn btn-ghost btn-sm" id="historyBtn" onclick="app.loadHistory()">📋 History</button>
       <span class="audit-count" id="auditCount"></span>
     </div>
   </div>
 
-  <!-- Terminal output -->
   <div class="card hidden" id="logCard">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <div class="card-title" style="margin:0">Output</div>
-      <button class="btn btn-ghost btn-sm" onclick="clearLog()">Clear</button>
+      <button class="btn btn-ghost btn-sm" onclick="app.clearLog()">Clear</button>
     </div>
     <div class="log" id="log"></div>
   </div>
 
-  <!-- ── Audit result ── -->
   <div class="card hidden" id="resultCard">
     <div class="card-title">Audit Result</div>
-
-    <!-- Verdict -->
     <div id="verdictBadge" class="verdict hidden"></div>
-
-    <!-- Summary -->
     <div class="summary-text hidden" id="summaryText"></div>
-
-    <!-- Scores -->
     <div class="scores" id="scoresGrid">
       <div class="score-card">
         <div class="score-label">Overall</div>
@@ -440,8 +147,6 @@
         <div class="score-bar-track"><div class="score-bar-fill" id="bSecurity" style="width:0%"></div></div>
       </div>
     </div>
-
-    <!-- Vulnerabilities -->
     <div id="vulnSection">
       <div class="vuln-header">
         <div class="card-title" style="margin:0">Vulnerabilities</div>
@@ -449,281 +154,252 @@
       </div>
       <div class="vuln-list" id="vulnList"></div>
     </div>
-
     <div class="no-vulns hidden" id="noVulns">✓ No vulnerabilities detected</div>
-
   </div>
 
-  <!-- ── Audit History ── -->
   <div class="card hidden" id="historyCard">
     <div class="card-title">Audit History</div>
     <div class="history-list" id="historyList">
       <div style="color:var(--muted);font-size:13px">No audits yet.</div>
     </div>
   </div>
-
 </div>
 
-<script>
-  // ── Wallet ──────────────────────────────────────────────────────────────────
-  let walletAddress = null;
+<script type="module">
+import { createClient } from 'genlayer-js';
+import { studionet } from 'genlayer-js/chains';
 
-  async function connectWallet() {
+const CONTRACT_ADDRESS = '0x8c4eD32C437246148d295ca0c4950E51c5CD3469';
+
+class App {
+  walletAddress = null;
+  pollTimer = null;
+
+  constructor() {
+    this.readClient = createClient({ chain: studionet });
+    this.checkWallet();
+  }
+
+  async checkWallet() {
+    if (window.ethereum) {
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      if (accounts.length > 0) {
+        this.setWallet(accounts[0]);
+      }
+    }
+  }
+
+  setWallet(address) {
+    this.walletAddress = address;
+    document.getElementById('connectBtn').classList.add('hidden');
+    const addrEl = document.getElementById('walletAddr');
+    addrEl.textContent = address.slice(0, 6) + '...' + address.slice(-4);
+    addrEl.classList.remove('hidden');
+  }
+
+  async connectWallet() {
     try {
       if (!window.ethereum) {
-        showError('No wallet found. Please install MetaMask.');
+        this.showError('No wallet found. Please install MetaMask.');
         return;
       }
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       if (accounts.length > 0) {
-        walletAddress = accounts[0];
-        document.getElementById('connectBtn').classList.add('hidden');
-        const addrEl = document.getElementById('walletAddr');
-        addrEl.textContent = walletAddress.slice(0, 6) + '...' + walletAddress.slice(-4);
-        addrEl.classList.remove('hidden');
-        hideError();
-        hide('resultCard');
-        document.getElementById('auditCount').textContent = '';
+        this.setWallet(accounts[0]);
+        this.hideError();
       }
     } catch (err) {
-      showError('Failed to connect wallet: ' + err.message);
+      this.showError('Failed to connect wallet: ' + err.message);
     }
   }
 
-  async function checkWallet() {
-    if (window.ethereum) {
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-      if (accounts.length > 0) {
-        walletAddress = accounts[0];
-        document.getElementById('connectBtn').classList.add('hidden');
-        const addrEl = document.getElementById('walletAddr');
-        addrEl.textContent = walletAddress.slice(0, 6) + '...' + walletAddress.slice(-4);
-        addrEl.classList.remove('hidden');
-        // Don't auto-load - wait for user to click
-      }
-    }
-  }
-
-  checkWallet();
-
-  // ── Load latest audit ─────────────────────────────────────────────────────
-  async function loadLatestAudit() {
-    if (!walletAddress) return;
+  async loadExample() {
     try {
-      const countRes = await fetch(`/api/count?walletAddress=${walletAddress}`);
-      const { count } = await countRes.json();
-      document.getElementById('auditCount').textContent = count && count > 0 ? `${count} audit${count !== 1 ? 's' : ''}` : '';
+      const res = await fetch('/api/example');
+      if (!res.ok) return this.showError('Could not load example file.');
+      const { content } = await res.json();
+      document.getElementById('sourceCode').value = content;
+      this.hideError();
+    } catch (err) {
+      this.showError('Failed to load example: ' + err.message);
+    }
+  }
 
-      if (!count || count === 0) {
-        hide('resultCard');
+  async scoreContract() {
+    const sourceCode = document.getElementById('sourceCode').value.trim();
+    if (!sourceCode) return this.showError('Paste some source code first.');
+
+    if (!this.walletAddress) {
+      return this.showError('Please connect your wallet first.');
+    }
+
+    this.hideError();
+    this.clearResult();
+    this.showLog();
+    this.setScoring(true);
+    if (this.pollTimer) clearInterval(this.pollTimer);
+
+    try {
+      // Create client with wallet for signing
+      this.writeClient = createClient({
+        chain: studionet,
+        account: this.walletAddress,
+        provider: window.ethereum,
+      });
+
+      const txHash = await this.writeClient.writeContract({
+        address: CONTRACT_ADDRESS,
+        functionName: 'score_contract',
+        args: [sourceCode],
+        value: 0n,
+      });
+
+      this.appendLog(`→ Transaction submitted: ${txHash}`);
+      this.appendLog(`→ Polling for status…`);
+
+      let lastStatus = null;
+      const poll = async () => {
+        try {
+          const tx = await this.readClient.getTransaction({ hash: txHash });
+          const status = tx.statusName || tx.status?.name || String(tx.status);
+          if (status !== lastStatus) {
+            this.appendLog(`  status: ${status}`);
+            lastStatus = status;
+          }
+          if (status === 'FINALIZED' || status === 'ACCEPTED') {
+            clearInterval(this.pollTimer);
+            this.appendLog('→ Transaction accepted. Reading result…');
+            await this.loadLatestAudit();
+            this.setScoring(false);
+          } else if (['CANCELED', 'UNDETERMINED', 'LEADER_TIMEOUT', 'VALIDATORS_TIMEOUT'].includes(status)) {
+            clearInterval(this.pollTimer);
+            this.showError(`Transaction failed: ${status}`);
+            this.setScoring(false);
+          }
+        } catch (e) {
+          clearInterval(this.pollTimer);
+          this.showError('Connection error: ' + e.message);
+          this.setScoring(false);
+        }
+      };
+      poll();
+      this.pollTimer = setInterval(poll, 4000);
+    } catch (err) {
+      this.showError(err.message || String(err));
+      this.setScoring(false);
+    }
+  }
+
+  async loadLatestAudit() {
+    if (!this.walletAddress) return;
+    try {
+      const raw = await this.readClient.readContract({
+        address: CONTRACT_ADDRESS,
+        functionName: 'get_my_audits',
+        args: [],
+      });
+      const count = raw.count || 0;
+      document.getElementById('auditCount').textContent = count > 0 ? `${count} audit${count !== 1 ? 's' : ''}` : '';
+      if (count === 0) {
+        this.hide('resultCard');
         return;
       }
-
-      const url = `/api/latest?walletAddress=${walletAddress}`;
-      const res = await fetch(url);
-      const { data } = await res.json();
-      if (data && data.overall !== null) {
-        renderResult(data);
-        show('resultCard');
-      }
+      const latest = raw.audits[count - 1];
+      this.renderResult(latest);
+      this.show('resultCard');
     } catch (err) {
-      console.log('Error:', err.message);
+      console.log('Error loading audit:', err.message);
     }
   }
 
-  // ── Example ─────────────────────────────────────────────────────────────────
-  async function loadExample() {
-    const res = await fetch('/api/example');
-    if (!res.ok) return showError('Could not load example file.');
-    const { content } = await res.json();
-    document.getElementById('sourceCode').value = content;
-    hideError();
+  async refreshResult() {
+    await this.loadLatestAudit();
   }
 
-  // ── Score ────────────────────────────────────────────────────────────────────
-  let pollTimer = null;
-
-  async function scoreContract() {
-    const sourceCode = document.getElementById('sourceCode').value.trim();
-    if (!sourceCode) return showError('Paste some source code first.');
-
-    hideError();
-    clearResult();
-    showLog();
-    setScoring(true);
-    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-
-    const res = await fetch('/api/score', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sourceCode }),
-    });
-
-    if (!res.ok) {
-      const { error } = await res.json().catch(() => ({ error: 'Request failed' }));
-      showError(error);
-      setScoring(false);
-      return;
+  async loadHistory() {
+    if (!this.walletAddress) {
+      return this.showError('Please connect your wallet first.');
     }
-
-    const { txHash } = await res.json();
-    appendLog(`→ Transaction submitted: ${txHash}`);
-    appendLog(`→ Polling for status…`);
-
-    let lastStatus = null;
-
-    async function poll() {
-      try {
-        const url = walletAddress ? `/api/status/${txHash}?walletAddress=${walletAddress}` : `/api/status/${txHash}`;
-        const r = await fetch(url);
-        if (!r.ok) {
-          const { error } = await r.json().catch(() => ({ error: 'Status check failed' }));
-          clearInterval(pollTimer); pollTimer = null;
-          showError(error);
-          setScoring(false);
-          return;
-        }
-        const { status, done, result, error } = await r.json();
-        if (status !== lastStatus) {
-          appendLog(`  status: ${status}`);
-          lastStatus = status;
-        }
-        if (done) {
-          clearInterval(pollTimer); pollTimer = null;
-          if (error) {
-            showError(error);
-          } else {
-            appendLog('→ Transaction accepted. Reading result…');
-            renderResult(result);
-            show('refreshBtn');
-          }
-          setScoring(false);
-        }
-      } catch (e) {
-        clearInterval(pollTimer); pollTimer = null;
-        showError('Connection error: ' + e.message);
-        setScoring(false);
+    this.hideError();
+    try {
+      const raw = await this.readClient.readContract({
+        address: CONTRACT_ADDRESS,
+        functionName: 'get_my_audits',
+        args: [],
+      });
+      const { audits, count } = raw;
+      if (!count || count === 0) {
+        this.show('historyCard');
+        document.getElementById('historyList').innerHTML = '<div style="color:var(--muted);font-size:13px">No audits yet.</div>';
+        return;
       }
-    }
-
-    poll();
-    pollTimer = setInterval(poll, 4000);
-  }
-
-  async function refreshResult() {
-    if (!walletAddress) {
-      showError('Please connect your wallet first.');
-      return;
-    }
-    hideError();
-    loadLatestAudit();
-  }
-
-  // ── History ──────────────────────────────────────────────────────────────────
-  async function loadHistory() {
-    if (!walletAddress) {
-      showError('Please connect your wallet first.');
-      return;
-    }
-    hideError();
-    const url = `/api/history?walletAddress=${walletAddress}`;
-    const res = await fetch(url);
-    if (!res.ok) { showError('Failed to load audit history.'); return; }
-    const { audits, count } = await res.json();
-
-    // If count is 0, just show the result card or empty message
-    if (!count || count === 0) {
-      show('historyCard');
-      document.getElementById('historyList').innerHTML = '<div style="color:var(--muted);font-size:13px">No audits yet. Submit your first contract above!</div>';
-      return;
-    }
-
-    const container = document.getElementById('historyList');
-    container.innerHTML = audits.slice().reverse().map(a => `
-      <div class="history-item" onclick='renderResult(${JSON.stringify(a).replace(/'/g, "&#39;")})'>
-        <div class="history-meta">Audit #${a.id}</div>
-        <div class="history-scores">
-          <span style="color:${gradeColor(a.overall)}">Overall: ${a.overall ?? '?'}</span>
-          <span style="color:${gradeColor(a.quality)}">Quality: ${a.quality ?? '?'}</span>
-          <span style="color:${gradeColor(a.security)}">Security: ${a.security ?? '?'}</span>
+      const container = document.getElementById('historyList');
+      container.innerHTML = audits.slice().reverse().map((a, i) => `
+        <div class="history-item" onclick='app.renderResult(${JSON.stringify(a).replace(/'/g, "&#39;")})'>
+          <div class="history-meta">Audit #${a.id}</div>
+          <div class="history-scores">
+            <span style="color:${this.gradeColor(a.overall)}">Overall: ${a.overall ?? '?'}</span>
+            <span style="color:${this.gradeColor(a.quality)}">Quality: ${a.quality ?? '?'}</span>
+            <span style="color:${this.gradeColor(a.security)}">Security: ${a.security ?? '?'}</span>
+          </div>
+          ${a.summary ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">${this.esc(a.summary)}</div>` : ''}
         </div>
-        ${a.summary ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">${esc(a.summary)}</div>` : ''}
-      </div>
-    `).join('');
-
-    show('historyCard');
+      `).join('');
+      this.show('historyCard');
+    } catch (err) {
+      this.showError('Failed to load history: ' + err.message);
+    }
   }
 
-  function gradeColor(score) {
-    if (score == null) return 'var(--muted)';
-    return score >= 70 ? 'var(--good)' : score >= 40 ? 'var(--warn)' : 'var(--bad)';
-  }
-
-  // ── Render result ────────────────────────────────────────────────────────────
-  function renderResult(data) {
-    show('resultCard');
-
-    // ── Summary ──
+  renderResult(data) {
+    this.show('resultCard');
     if (data.summary) {
       document.getElementById('summaryText').textContent = data.summary;
-      show('summaryText');
+      this.show('summaryText');
     } else {
-      hide('summaryText');
+      this.hide('summaryText');
     }
-
-    // ── Scores ──
     if (data.overall !== null) {
-      setScore('sOverall', 'bOverall', data.overall);
-      setScore('sQuality', 'bQuality', data.quality);
-      setScore('sSecurity', 'bSecurity', data.security);
-      show('scoresGrid');
-
-      // Verdict badge
-      const grade = gradeClass(data.overall);
+      this.setScore('sOverall', 'bOverall', data.overall);
+      this.setScore('sQuality', 'bQuality', data.quality);
+      this.setScore('sSecurity', 'bSecurity', data.security);
+      this.show('scoresGrid');
+      const grade = this.gradeClass(data.overall);
       const labels = { good: '✓ Looks Good', mid: '⚠ Needs Attention', bad: '✕ High Risk' };
       const badge = document.getElementById('verdictBadge');
       badge.textContent = labels[grade];
       badge.className = `verdict ${grade}`;
-      show('verdictBadge');
+      this.show('verdictBadge');
     } else {
-      hide('scoresGrid');
-      hide('verdictBadge');
+      this.hide('scoresGrid');
+      this.hide('verdictBadge');
     }
-
-    // ── Vulnerabilities ──
     const vulns = data.vulnerabilities || [];
     if (vulns.length) {
-      // Sort: critical → medium → low
       const order = { critical: 0, medium: 1, low: 2 };
       vulns.sort((a, b) => (order[a.severity] ?? 3) - (order[b.severity] ?? 3));
-
-      // Counts
       const counts = { critical: 0, medium: 0, low: 0 };
       vulns.forEach(v => { if (counts[v.severity] !== undefined) counts[v.severity]++; });
       document.getElementById('vulnCounts').innerHTML = ['critical','medium','low']
         .filter(s => counts[s] > 0)
         .map(s => `<span class="vuln-count-badge ${s}">${counts[s]} ${s}</span>`)
         .join('');
-
       document.getElementById('vulnList').innerHTML = vulns.map(v => `
-        <div class="vuln-item ${esc(v.severity)}">
-          <span class="vuln-badge">${esc(v.severity)}</span>
-          <span class="vuln-desc">${esc(v.description)}</span>
+        <div class="vuln-item ${this.esc(v.severity)}">
+          <span class="vuln-badge">${this.esc(v.severity)}</span>
+          <span class="vuln-desc">${this.esc(v.description)}</span>
         </div>
       `).join('');
-      show('vulnSection');
-      hide('noVulns');
+      this.show('vulnSection');
+      this.hide('noVulns');
     } else if (data.overall !== null) {
-      hide('vulnSection');
-      show('noVulns');
-    } else {
-      hide('vulnSection');
+      this.hide('vulnSection');
+      this.show('noVulns');
     }
-
   }
 
-  function setScore(numId, barId, score) {
-    const cls = gradeClass(score);
+  setScore(numId, barId, score) {
+    const cls = this.gradeClass(score);
     const numEl = document.getElementById(numId);
     numEl.textContent = score;
     numEl.className = `score-num ${cls}`;
@@ -732,63 +408,67 @@
     barEl.className = `score-bar-fill ${cls}`;
   }
 
-  function gradeClass(score) {
+  gradeClass(score) {
     return score >= 70 ? 'good' : score >= 40 ? 'mid' : 'bad';
   }
 
-  function clearResult() {
-    hide('resultCard');
-    hide('verdictBadge');
-    hide('summaryText');
-    hide('noVulns');
+  gradeColor(score) {
+    if (score == null) return 'var(--muted)';
+    return score >= 70 ? 'var(--good)' : score >= 40 ? 'var(--warn)' : 'var(--bad)';
+  }
+
+  clearResult() {
+    this.hide('resultCard');
+    this.hide('verdictBadge');
+    this.hide('summaryText');
+    this.hide('noVulns');
     document.getElementById('vulnList').innerHTML = '';
     document.getElementById('vulnCounts').innerHTML = '';
-    show('vulnSection');
-    show('scoresGrid');
+    this.show('vulnSection');
+    this.show('scoresGrid');
   }
 
-
-  // ── Log ──────────────────────────────────────────────────────────────────────
-  function showLog() {
-    show('logCard');
+  showLog() {
+    this.show('logCard');
     document.getElementById('log').innerHTML = '';
   }
 
-  function clearLog() {
+  clearLog() {
     document.getElementById('log').innerHTML = '';
-    hide('logCard');
+    this.hide('logCard');
   }
 
-  function appendLog(text, isWarn) {
+  appendLog(text) {
     const box = document.getElementById('log');
     const line = document.createElement('div');
-    if (isWarn) line.className = 'log-warn';
     line.textContent = text;
     box.appendChild(line);
     box.scrollTop = box.scrollHeight;
   }
 
-  // ── Scoring state ────────────────────────────────────────────────────────────
-  function setScoring(on) {
+  setScoring(on) {
     const btn = document.getElementById('scoreBtn');
     btn.disabled = on;
-    btn.innerHTML = on
-      ? `<div class="spinner"></div> Scoring…`
-      : 'Score Contract';
+    btn.innerHTML = on ? `<div class="spinner"></div> Scoring…` : 'Score Contract';
   }
 
-  // ── Error ────────────────────────────────────────────────────────────────────
-  function showError(msg) {
+  showError(msg) {
     const el = document.getElementById('errorNotice');
-    el.innerHTML = `<span>✕</span><span>${esc(msg)}</span>`;
+    el.innerHTML = `<span>✕</span><span>${this.esc(msg)}</span>`;
     el.classList.remove('hidden');
   }
-  function hideError() { hide('errorNotice'); }
 
-  // ── Utils ────────────────────────────────────────────────────────────────────
-  const show = id => document.getElementById(id).classList.remove('hidden');
-  const hide = id => document.getElementById(id).classList.add('hidden');
-  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  hideError() {
+    this.hide('errorNotice');
+  }
+
+  show(id) { document.getElementById(id).classList.remove('hidden'); }
+  hide(id) { document.getElementById(id).classList.add('hidden'); }
+  esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+}
+
+const app = new App();
+window.app = app;
 </script>
 </body>
 </html>
