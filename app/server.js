@@ -18,6 +18,7 @@ const REPO_ROOT = join(__dirname, '..');
 
 function makeClient() {
   const rpcUrl = process.env.RPC_URL || 'http://localhost:8080';
+  console.log('Creating client with RPC:', rpcUrl);
   const account = createAccount(process.env.PRIVATE_KEY);
   return createClient({ chain: localnet, endpoint: rpcUrl, account });
 }
@@ -132,6 +133,7 @@ app.post('/api/score', async (req, res) => {
   }
 
   try {
+    console.log('Submitting score request, contract:', address);
     const client = makeClient();
     const txHash = await client.writeContract({
       address,
@@ -139,8 +141,10 @@ app.post('/api/score', async (req, res) => {
       args: [sourceCode],
       value: 0n,
     });
+    console.log('Transaction submitted:', txHash);
     res.json({ txHash, address });
   } catch (err) {
+    console.error('score error:', err);
     res.status(500).json({ error: err.message || String(err) });
   }
 });
@@ -155,7 +159,9 @@ app.get('/api/status/:txHash', async (req, res) => {
 
   try {
     const client = makeClient();
+    console.log('Fetching tx:', req.params.txHash);
     const tx = await client.getTransaction({ hash: req.params.txHash });
+    console.log('Got tx:', JSON.stringify(tx).slice(0, 500));
     const status = tx.statusName || tx.status?.name || String(tx.status) || 'UNKNOWN';
     const done = isTerminal(status);
 
@@ -164,16 +170,18 @@ app.get('/api/status/:txHash', async (req, res) => {
     }
 
     if (done) {
+      console.log('Transaction finalized, reading contract...');
       const account = createAccount(process.env.PRIVATE_KEY);
       const raw = await client.readContract({
         address,
         functionName: 'get_latest_audit',
         args: [account.address],
       });
+      console.log('Contract read result:', raw);
       return res.json({ status, done: true, result: parseScoreResult(raw) });
     }
 
-    console.log('tx status:', status, 'done:', done, 'tx:', JSON.stringify(tx).slice(0, 200));
+    console.log('tx status:', status, 'done:', done);
     res.json({ status, done: false });
   } catch (err) {
     console.error('status check error:', err);
