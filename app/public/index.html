@@ -107,8 +107,6 @@
     <div class="toolbar">
       <button class="btn btn-primary" id="scoreBtn" onclick="window.scoreContract()">Score Contract</button>
       <button class="btn btn-ghost btn-sm" onclick="window.loadExample()">Load example</button>
-      <button class="btn btn-ghost btn-sm hidden" id="refreshBtn" onclick="window.refreshResult()">↻ Refresh</button>
-      <button class="btn btn-ghost btn-sm" id="historyBtn" onclick="window.loadHistory()">📋 History</button>
       <span id="auditCount"></span>
     </div>
     
@@ -150,11 +148,6 @@
       <div class="vuln-list" id="vulnList"></div>
     </div>
     <div class="no-vulns hidden" id="noVulns">✓ No vulnerabilities detected</div>
-  </div>
-
-  <div class="card hidden" id="historyCard">
-    <div class="card-title">Audit History</div>
-    <div class="history-list" id="historyList"></div>
   </div>
 </div>
 
