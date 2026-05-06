@@ -199,6 +199,7 @@ async function scoreContract() {
       
       if (result.done) {
         clearInterval(pollTimer);
+        updateProgress(4);
         if (result.error) showError(result.error);
         else if (result.result) {
           appendLog('→ Done!');
