@@ -172,16 +172,22 @@ app.get('/api/status/:txHash', async (req, res) => {
     if (done) {
       console.log('Transaction finalized, reading contract...');
       const account = createAccount(process.env.PRIVATE_KEY);
-      const raw = await client.readContract({
-        address,
-        functionName: 'get_latest_audit',
-        args: [account.address],
-      });
-      console.log('Contract read result:', raw);
-      return res.json({ status, done: true, result: parseScoreResult(raw) });
+      console.log('Reading with address:', address, 'arg:', account.address, typeof account.address);
+      try {
+        const raw = await client.readContract({
+          address,
+          functionName: 'get_latest_audit',
+          args: [String(account.address)],
+        });
+        console.log('Contract read result:', raw);
+        return res.json({ status, done: true, result: parseScoreResult(raw) });
+      } catch (readErr) {
+        console.error('Read contract error:', readErr.message);
+        return res.json({ status, done: true, error: 'Failed to read result: ' + readErr.message });
+      }
     }
 
-    console.log('tx status:', status, 'done:', done);
+    console.log('tx status:', status, 'done:', done, 'tx keys:', Object.keys(tx));
     res.json({ status, done: false });
   } catch (err) {
     console.error('status check error:', err);
