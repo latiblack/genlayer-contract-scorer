@@ -245,49 +245,46 @@ async function scoreContract() {
   if (!sourceCode) return showError('Paste some source code first.');
   if (!walletAddress) return showError('Please connect your wallet first.');
 
-  hideError();
-  clearResult();
-  showLog();
-  setScoring(true);
-  if (pollTimer) clearInterval(pollTimer);
-
+  showError('Scoring is handled via backend. Click Score Contract to continue.');
+  
+  // Make request to backend
   try {
-    // Sign with wallet via eth_sendTransaction
-    const txHash = await window.ethereum.request({
-      method: 'eth_sendTransaction',
-      params: [{
-        to: CONTRACT_ADDRESS,
-        from: walletAddress,
-        data: '0x' + encodeContractCall('score_contract', [sourceCode])
-      }]
+    const res = await fetch('/api/score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sourceCode, walletAddress }),
     });
-
+    const data = await res.json();
+    if (!res.ok) {
+      showError(data.error || 'Failed to submit');
+      return;
+    }
+    const { txHash } = data;
     appendLog('→ Transaction submitted: ' + txHash);
     appendLog('→ Polling for status…');
-
+    
     let lastStatus = null;
     const poll = async () => {
       try {
-        const result = await rpcCall('eth_getTransactionByHash', [txHash]);
-        const tx = result.result;
-        const status = tx ? (tx.status || 'PENDING') : 'NOT_FOUND';
-        if (status !== lastStatus) {
-          appendLog('  status: ' + status);
-          lastStatus = status;
+        const r = await fetch('/api/status/' + txHash + '?walletAddress=' + walletAddress);
+        const result = await r.json();
+        if (result.status !== lastStatus) {
+          appendLog('  status: ' + result.status);
+          lastStatus = result.status;
         }
-        if (status === '0x1' || status === 'FINALIZED') {
+        if (result.done) {
           clearInterval(pollTimer);
-          appendLog('→ Transaction accepted. Reading result…');
-          await loadLatestAudit();
-          setScoring(false);
-        } else if (status === '0x0' || ['CANCELED', 'UNDETERMINED'].includes(status)) {
-          clearInterval(pollTimer);
-          showError('Transaction failed: ' + status);
+          if (result.error) {
+            showError(result.error);
+          } else if (result.result) {
+            appendLog('→ Transaction accepted.');
+            renderResult(result.result);
+          }
           setScoring(false);
         }
       } catch (e) {
         clearInterval(pollTimer);
-        showError('Connection error: ' + e.message);
+        showError('Error: ' + e.message);
         setScoring(false);
       }
     };
@@ -324,9 +321,15 @@ function simpleHash(str) {
 
 function toHex(value) {
   if (typeof value === 'string') {
-    return '0000000000000000000000000000000000000000000000000000000000000000' + 
-           Buffer.from(value).toString('hex').slice(0, 64);
+    // Convert string to hex manually
+    let hex = '';
+    for (let i = 0; i < value.length; i++) {
+      hex += value.charCodeAt(i).toString(16).padStart(2, '0');
+    }
+    return '0000000000000000000000000000000000000000000000000000000000000'.slice(0, 64 - hex.length) + hex;
   }
+  return '0000000000000000000000000000000000000000000000000000' + value.toString(16);
+}
   return '0000000000000000000000000000000000000000000000000000' + value.toString(16);
 }
 
