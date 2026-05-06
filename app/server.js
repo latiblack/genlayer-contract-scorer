@@ -124,7 +124,7 @@ app.get('/api/example', (req, res) => {
 // ── Submit audit transaction ──────────────────────────────────────────────────
 
 app.post('/api/score', async (req, res) => {
-  const { sourceCode } = req.body;
+  const { sourceCode, walletAddress } = req.body;
   if (!sourceCode) return res.status(400).json({ error: 'sourceCode is required' });
 
   const address = process.env.CONTRACT_ADDRESS || '';
@@ -140,6 +140,7 @@ app.post('/api/score', async (req, res) => {
       functionName: 'score_contract',
       args: [sourceCode],
       value: 0n,
+      account: walletAddress,
     });
     console.log('Transaction submitted:', txHash);
     res.json({ txHash, address });
@@ -152,6 +153,7 @@ app.post('/api/score', async (req, res) => {
 // ── Poll transaction status ───────────────────────────────────────────────────
 
 app.get('/api/status/:txHash', async (req, res) => {
+  const { walletAddress } = req.query;
   const address = process.env.CONTRACT_ADDRESS || '';
   if (!address || address.startsWith('0x_')) {
     return res.status(400).json({ error: 'CONTRACT_ADDRESS is not set in .env' });
@@ -170,14 +172,13 @@ app.get('/api/status/:txHash', async (req, res) => {
     }
 
     if (done) {
-      console.log('Transaction finalized, reading contract...');
-      const queryAddr = String(account.address);
-      console.log('Reading get_my_audits for sender:', queryAddr);
+      console.log('Transaction finalized, reading contract with wallet:', walletAddress);
       try {
         const raw = await client.readContract({
           address,
           functionName: 'get_my_audits',
           args: [],
+          account: walletAddress,
         });
         console.log('Contract read result:', raw);
         if (raw && raw.audits && raw.audits.length > 0) {
@@ -203,6 +204,7 @@ app.get('/api/status/:txHash', async (req, res) => {
 // ── Get latest audit result (re-read without re-scoring) ─────────────────────
 
 app.get('/api/result', async (req, res) => {
+  const { walletAddress } = req.query;
   const address = process.env.CONTRACT_ADDRESS || '';
   if (!address || address.startsWith('0x_')) {
     return res.status(400).json({ error: 'CONTRACT_ADDRESS is not set in .env' });
@@ -214,6 +216,7 @@ app.get('/api/result', async (req, res) => {
       address,
       functionName: 'get_my_audits',
       args: [],
+      account: walletAddress,
     });
     if (raw && raw.audits && raw.audits.length > 0) {
       const latest = raw.audits[raw.audits.length - 1];
@@ -229,17 +232,19 @@ app.get('/api/result', async (req, res) => {
 // ── Get audit history for the configured account ─────────────────────────────
 
 app.get('/api/history', async (req, res) => {
+  const { walletAddress } = req.query;
   const address = process.env.CONTRACT_ADDRESS || '';
   if (!address || address.startsWith('0x_')) {
     return res.status(400).json({ error: 'CONTRACT_ADDRESS is not set in .env' });
   }
 
-try {
+  try {
     const client = makeClient();
     const raw = await client.readContract({
       address,
       functionName: 'get_my_audits',
       args: [],
+      account: walletAddress,
     });
     res.json({ audits: raw.audits || [], count: raw.count || 0 });
   } catch (err) {

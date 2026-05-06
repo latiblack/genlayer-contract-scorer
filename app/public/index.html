@@ -61,7 +61,22 @@
       background: var(--primary-dim);
       color: #a5b4fc;
       border: 1px solid rgba(99,102,241,.25);
+    }
+
+    .wallet-address {
+      font-size: 11px;
+      font-family: var(--mono);
+      padding: 4px 10px;
+      border-radius: 4px;
+      background: var(--raised);
+      color: var(--text);
+    }
+
+    .header-right {
       margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
     /* ── Layout ── */
@@ -347,6 +362,10 @@
     <p>Audit Intelligent Contracts with on-chain LLM consensus</p>
   </div>
   <span class="version-badge">v0.3.0 SDK</span>
+  <button class="btn btn-ghost btn-sm" id="connectBtn" onclick="connectWallet()">
+    Connect Wallet
+  </button>
+  <span class="wallet-address hidden" id="walletAddr"></span>
 </header>
 
 <!-- ── Main ── -->
@@ -437,6 +456,45 @@
 </div>
 
 <script>
+  // ── Wallet ──────────────────────────────────────────────────────────────────
+  let walletAddress = null;
+
+  async function connectWallet() {
+    try {
+      if (!window.ethereum) {
+        showError('No wallet found. Please install MetaMask.');
+        return;
+      }
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      if (accounts.length > 0) {
+        walletAddress = accounts[0];
+        document.getElementById('connectBtn').classList.add('hidden');
+        const addrEl = document.getElementById('walletAddr');
+        addrEl.textContent = walletAddress.slice(0, 6) + '...' + walletAddress.slice(-4);
+        addrEl.classList.remove('hidden');
+        hideError();
+        loadHistory();
+      }
+    } catch (err) {
+      showError('Failed to connect wallet: ' + err.message);
+    }
+  }
+
+  async function checkWallet() {
+    if (window.ethereum) {
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      if (accounts.length > 0) {
+        walletAddress = accounts[0];
+        document.getElementById('connectBtn').classList.add('hidden');
+        const addrEl = document.getElementById('walletAddr');
+        addrEl.textContent = walletAddress.slice(0, 6) + '...' + walletAddress.slice(-4);
+        addrEl.classList.remove('hidden');
+      }
+    }
+  }
+
+  checkWallet();
+
   // ── Example ─────────────────────────────────────────────────────────────────
   async function loadExample() {
     const res = await fetch('/api/example');
@@ -453,6 +511,11 @@
     const sourceCode = document.getElementById('sourceCode').value.trim();
     if (!sourceCode) return showError('Paste some source code first.');
 
+    if (!walletAddress) {
+      showError('Please connect your wallet first.');
+      return;
+    }
+
     hideError();
     clearResult();
     showLog();
@@ -462,7 +525,7 @@
     const res = await fetch('/api/score', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sourceCode }),
+      body: JSON.stringify({ sourceCode, walletAddress }),
     });
 
     if (!res.ok) {
@@ -480,7 +543,8 @@
 
     async function poll() {
       try {
-        const r = await fetch(`/api/status/${txHash}`);
+        const url = walletAddress ? `/api/status/${txHash}?walletAddress=${walletAddress}` : `/api/status/${txHash}`;
+        const r = await fetch(url);
         if (!r.ok) {
           const { error } = await r.json().catch(() => ({ error: 'Status check failed' }));
           clearInterval(pollTimer); pollTimer = null;
@@ -526,8 +590,13 @@
 
   // ── History ──────────────────────────────────────────────────────────────────
   async function loadHistory() {
+    if (!walletAddress) {
+      showError('Please connect your wallet first.');
+      return;
+    }
     hideError();
-    const res = await fetch('/api/history');
+    const url = `/api/history?walletAddress=${walletAddress}`;
+    const res = await fetch(url);
     if (!res.ok) { showError('Failed to load audit history.'); return; }
     const { audits } = await res.json();
     const container = document.getElementById('historyList');
