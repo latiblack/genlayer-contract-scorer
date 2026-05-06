@@ -22,6 +22,31 @@ function makeClient() {
   return createClient({ chain: localnet, endpoint: rpcUrl, account });
 }
 
+// Map status to terminal states
+const TERMINAL_STATUSES = new Set([
+  'FINALIZED',
+  'ACCEPTED',
+  'UNDETERMINED',
+  'CANCELED',
+  'LEADER_TIMEOUT',
+  'VALIDATORS_TIMEOUT',
+]);
+
+const FAILED_STATUSES = new Set([
+  'UNDETERMINED',
+  'CANCELED',
+  'LEADER_TIMEOUT',
+  'VALIDATORS_TIMEOUT',
+]);
+
+function isTerminal(status) {
+  return TERMINAL_STATUSES.has(status);
+}
+
+function isFailed(status) {
+  return FAILED_STATUSES.has(status);
+}
+
 /**
  * Parse the audit result from the contract.
  * The contract returns JSON format:
@@ -81,22 +106,6 @@ function parseScoreResult(raw) {
   return result;
 }
 
-const TERMINAL = new Set([
-  TransactionStatus.ACCEPTED,
-  TransactionStatus.FINALIZED,
-  TransactionStatus.UNDETERMINED,
-  TransactionStatus.CANCELED,
-  TransactionStatus.LEADER_TIMEOUT,
-  TransactionStatus.VALIDATORS_TIMEOUT,
-]);
-
-const FAILED = new Set([
-  TransactionStatus.UNDETERMINED,
-  TransactionStatus.CANCELED,
-  TransactionStatus.LEADER_TIMEOUT,
-  TransactionStatus.VALIDATORS_TIMEOUT,
-]);
-
 // Track request IDs per address (client-side mapping)
 const addressRequestIdMap = new Map();
 
@@ -147,15 +156,14 @@ app.get('/api/status/:txHash', async (req, res) => {
   try {
     const client = makeClient();
     const tx = await client.getTransaction({ hash: req.params.txHash });
-    const status = tx.statusName || String(tx.status);
-    const done = TERMINAL.has(status);
+    const status = tx.statusName || tx.status?.name || String(tx.status) || 'UNKNOWN';
+    const done = isTerminal(status);
 
-    if (done && FAILED.has(status)) {
+    if (done && isFailed(status)) {
       return res.json({ status, done: true, error: `Transaction ended with status: ${status}` });
     }
 
     if (done) {
-      // Read the latest audit for the configured account
       const account = createAccount(process.env.PRIVATE_KEY);
       const raw = await client.readContract({
         address,
@@ -165,10 +173,10 @@ app.get('/api/status/:txHash', async (req, res) => {
       return res.json({ status, done: true, result: parseScoreResult(raw) });
     }
 
-    // Debug: log what's actually being returned
     console.log('tx status:', status, 'done:', done, 'tx:', JSON.stringify(tx).slice(0, 200));
     res.json({ status, done: false });
   } catch (err) {
+    console.error('status check error:', err);
     res.status(500).json({ error: err.message || String(err) });
   }
 });
