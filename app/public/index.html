@@ -508,16 +508,24 @@
 
   // ── Load latest audit ─────────────────────────────────────────────────────
   async function loadLatestAudit() {
-    if (!walletAddress) return;
+    if (!walletAddress) {
+      hide('resultCard');
+      document.getElementById('auditCount').textContent = '';
+      return;
+    }
     try {
-      // Get count
+      // Get count first
       const countRes = await fetch(`/api/count?walletAddress=${walletAddress}`);
       const { count } = await countRes.json();
       const countEl = document.getElementById('auditCount');
       countEl.textContent = count && count > 0 ? `${count} audit${count !== 1 ? 's' : ''}` : '';
-      if (count === 0) countEl.textContent = '';
+      if (count === 0) {
+        countEl.textContent = '';
+        hide('resultCard');
+        return;
+      }
 
-      // Get latest
+      // Only get latest if we have audits
       const url = `/api/latest?walletAddress=${walletAddress}`;
       const res = await fetch(url);
       const { data, id } = await res.json();
@@ -527,6 +535,7 @@
       }
     } catch (err) {
       console.log('No audits yet');
+      hide('resultCard');
     }
   }
 
@@ -633,15 +642,16 @@
     const url = `/api/history?walletAddress=${walletAddress}`;
     const res = await fetch(url);
     if (!res.ok) { showError('Failed to load audit history.'); return; }
-    const { audits } = await res.json();
-    const container = document.getElementById('historyList');
+    const { audits, count } = await res.json();
 
-    if (!audits || audits.length === 0) {
-      container.innerHTML = '<div style="color:var(--muted);font-size:13px">No audits yet. Submit your first contract above!</div>';
+    // If count is 0, just show the result card or empty message
+    if (!count || count === 0) {
       show('historyCard');
+      document.getElementById('historyList').innerHTML = '<div style="color:var(--muted);font-size:13px">No audits yet. Submit your first contract above!</div>';
       return;
     }
 
+    const container = document.getElementById('historyList');
     container.innerHTML = audits.slice().reverse().map(a => `
       <div class="history-item" onclick='renderResult(${JSON.stringify(a).replace(/'/g, "&#39;")})'>
         <div class="history-meta">Audit #${a.id}</div>
