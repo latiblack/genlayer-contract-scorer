@@ -124,7 +124,7 @@ app.get('/api/example', (req, res) => {
 // ── Submit audit transaction ──────────────────────────────────────────────────
 
 app.post('/api/score', async (req, res) => {
-  const { sourceCode, walletAddress } = req.body;
+  const { sourceCode } = req.body;
   if (!sourceCode) return res.status(400).json({ error: 'sourceCode is required' });
 
   const address = process.env.CONTRACT_ADDRESS || '';
@@ -140,7 +140,6 @@ app.post('/api/score', async (req, res) => {
       functionName: 'score_contract',
       args: [sourceCode],
       value: 0n,
-      account: walletAddress,
     });
     console.log('Transaction submitted:', txHash);
     res.json({ txHash, address });

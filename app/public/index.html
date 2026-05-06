@@ -547,11 +547,6 @@
     const sourceCode = document.getElementById('sourceCode').value.trim();
     if (!sourceCode) return showError('Paste some source code first.');
 
-    if (!walletAddress) {
-      showError('Please connect your wallet first.');
-      return;
-    }
-
     hideError();
     clearResult();
     showLog();
@@ -561,7 +556,7 @@
     const res = await fetch('/api/score', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sourceCode, walletAddress }),
+      body: JSON.stringify({ sourceCode }),
     });
 
     if (!res.ok) {
