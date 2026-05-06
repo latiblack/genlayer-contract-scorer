@@ -482,13 +482,8 @@
         addrEl.textContent = walletAddress.slice(0, 6) + '...' + walletAddress.slice(-4);
         addrEl.classList.remove('hidden');
         hideError();
-        
-        // Clear previous results before loading new data
-        clearResult();
+        hide('resultCard');
         document.getElementById('auditCount').textContent = '';
-        
-        // Load this wallet's data
-        loadLatestAudit();
       }
     } catch (err) {
       showError('Failed to connect wallet: ' + err.message);
@@ -504,8 +499,7 @@
         const addrEl = document.getElementById('walletAddr');
         addrEl.textContent = walletAddress.slice(0, 6) + '...' + walletAddress.slice(-4);
         addrEl.classList.remove('hidden');
-        clearResult();
-        loadLatestAudit();
+        // Don't auto-load - wait for user to click
       }
     }
   }
@@ -514,34 +508,26 @@
 
   // ── Load latest audit ─────────────────────────────────────────────────────
   async function loadLatestAudit() {
-    if (!walletAddress) {
-      hide('resultCard');
-      document.getElementById('auditCount').textContent = '';
-      return;
-    }
+    if (!walletAddress) return;
     try {
-      // Get count first
       const countRes = await fetch(`/api/count?walletAddress=${walletAddress}`);
       const { count } = await countRes.json();
-      const countEl = document.getElementById('auditCount');
-      countEl.textContent = count && count > 0 ? `${count} audit${count !== 1 ? 's' : ''}` : '';
-      if (count === 0) {
-        countEl.textContent = '';
+      document.getElementById('auditCount').textContent = count && count > 0 ? `${count} audit${count !== 1 ? 's' : ''}` : '';
+
+      if (!count || count === 0) {
         hide('resultCard');
         return;
       }
 
-      // Only get latest if we have audits
       const url = `/api/latest?walletAddress=${walletAddress}`;
       const res = await fetch(url);
-      const { data, id } = await res.json();
+      const { data } = await res.json();
       if (data && data.overall !== null) {
         renderResult(data);
         show('resultCard');
       }
     } catch (err) {
-      console.log('No audits yet');
-      hide('resultCard');
+      console.log('Error:', err.message);
     }
   }
 
