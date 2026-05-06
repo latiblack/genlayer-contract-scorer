@@ -98,7 +98,7 @@
   </div>
   <span class="version-badge" style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--primary-dim);color:#a5b4fc;border:1px solid rgba(99,102,241,.25)">v0.3.0 SDK</span>
   <div class="header-right">
-    <button class="btn btn-ghost btn-sm" id="connectBtn" onclick="app.connectWallet()">Connect Wallet</button>
+    <button class="btn btn-ghost btn-sm" id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
     <span class="wallet-address hidden" id="walletAddr"></span>
   </div>
 </header>
@@ -110,10 +110,10 @@
     <div class="card-title">Contract Source Code</div>
     <textarea id="sourceCode" placeholder="Paste the full source code of the contract you want to audit…"></textarea>
     <div class="toolbar">
-      <button class="btn btn-primary" id="scoreBtn" onclick="app.scoreContract()">Score Contract</button>
-      <button class="btn btn-ghost btn-sm" onclick="app.loadExample()">Load example (bank_vault.py)</button>
-      <button class="btn btn-ghost btn-sm hidden" id="refreshBtn" onclick="app.refreshResult()">↻ Refresh result</button>
-      <button class="btn btn-ghost btn-sm" id="historyBtn" onclick="app.loadHistory()">📋 History</button>
+      <button class="btn btn-primary" id="scoreBtn" onclick="scoreContract()">Score Contract</button>
+      <button class="btn btn-ghost btn-sm" onclick="loadExample()">Load example (bank_vault.py)</button>
+      <button class="btn btn-ghost btn-sm hidden" id="refreshBtn" onclick="refreshResult()">↻ Refresh result</button>
+      <button class="btn btn-ghost btn-sm" id="historyBtn" onclick="loadHistory()">📋 History</button>
       <span class="audit-count" id="auditCount"></span>
     </div>
   </div>
@@ -121,7 +121,7 @@
   <div class="card hidden" id="logCard">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <div class="card-title" style="margin:0">Output</div>
-      <button class="btn btn-ghost btn-sm" onclick="app.clearLog()">Clear</button>
+      <button class="btn btn-ghost btn-sm" onclick="clearLog()">Clear</button>
     </div>
     <div class="log" id="log"></div>
   </div>
@@ -467,8 +467,15 @@ class App {
   esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 }
 
-const app = new App();
-window.app = app;
+window.app = new App();
+
+// Expose methods at window level for HTML onclick handlers
+window.connectWallet = () => window.app.connectWallet();
+window.scoreContract = () => window.app.scoreContract();
+window.loadExample = () => window.app.loadExample();
+window.refreshResult = () => window.app.refreshResult();
+window.loadHistory = () => window.app.loadHistory();
+window.clearLog = () => window.app.clearLog();
 </script>
 </body>
 </html>
