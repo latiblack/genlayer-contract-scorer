@@ -79,6 +79,14 @@
       gap: 10px;
     }
 
+    .audit-count {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      background: var(--raised);
+      color: var(--muted);
+    }
+
     /* ── Layout ── */
     .main {
       max-width: 860px;
@@ -391,6 +399,7 @@
       <button class="btn btn-ghost btn-sm" id="historyBtn" onclick="loadHistory()">
         📋 History
       </button>
+      <span class="audit-count" id="auditCount"></span>
     </div>
   </div>
 
@@ -473,6 +482,7 @@
         addrEl.textContent = walletAddress.slice(0, 6) + '...' + walletAddress.slice(-4);
         addrEl.classList.remove('hidden');
         hideError();
+        loadLatestAudit();
         loadHistory();
       }
     } catch (err) {
@@ -489,11 +499,36 @@
         const addrEl = document.getElementById('walletAddr');
         addrEl.textContent = walletAddress.slice(0, 6) + '...' + walletAddress.slice(-4);
         addrEl.classList.remove('hidden');
+        loadLatestAudit();
       }
     }
   }
 
   checkWallet();
+
+  // ── Load latest audit ─────────────────────────────────────────────────────
+  async function loadLatestAudit() {
+    if (!walletAddress) return;
+    try {
+      // Get count
+      const countRes = await fetch(`/api/count?walletAddress=${walletAddress}`);
+      const { count } = await countRes.json();
+      const countEl = document.getElementById('auditCount');
+      countEl.textContent = count && count > 0 ? `${count} audit${count !== 1 ? 's' : ''}` : '';
+      if (count === 0) countEl.textContent = '';
+
+      // Get latest
+      const url = `/api/latest?walletAddress=${walletAddress}`;
+      const res = await fetch(url);
+      const { data, id } = await res.json();
+      if (data && data.overall !== null) {
+        renderResult(data);
+        show('resultCard');
+      }
+    } catch (err) {
+      console.log('No audits yet');
+    }
+  }
 
   // ── Example ─────────────────────────────────────────────────────────────────
   async function loadExample() {
