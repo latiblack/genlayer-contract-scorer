@@ -482,8 +482,13 @@
         addrEl.textContent = walletAddress.slice(0, 6) + '...' + walletAddress.slice(-4);
         addrEl.classList.remove('hidden');
         hideError();
+        
+        // Clear previous results before loading new data
+        clearResult();
+        document.getElementById('auditCount').textContent = '';
+        
+        // Load this wallet's data
         loadLatestAudit();
-        loadHistory();
       }
     } catch (err) {
       showError('Failed to connect wallet: ' + err.message);
@@ -499,6 +504,7 @@
         const addrEl = document.getElementById('walletAddr');
         addrEl.textContent = walletAddress.slice(0, 6) + '...' + walletAddress.slice(-4);
         addrEl.classList.remove('hidden');
+        clearResult();
         loadLatestAudit();
       }
     }
@@ -624,12 +630,12 @@
   }
 
   async function refreshResult() {
+    if (!walletAddress) {
+      showError('Please connect your wallet first.');
+      return;
+    }
     hideError();
-    const res = await fetch('/api/result');
-    if (!res.ok) { showError('Failed to read result from contract.'); return; }
-    const { data } = await res.json();
-    clearResult();
-    renderResult(data);
+    loadLatestAudit();
   }
 
   // ── History ──────────────────────────────────────────────────────────────────
