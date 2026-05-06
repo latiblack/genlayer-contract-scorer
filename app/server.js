@@ -165,6 +165,8 @@ app.get('/api/status/:txHash', async (req, res) => {
       return res.json({ status, done: true, result: parseScoreResult(raw) });
     }
 
+    // Debug: log what's actually being returned
+    console.log('tx status:', status, 'done:', done, 'tx:', JSON.stringify(tx).slice(0, 200));
     res.json({ status, done: false });
   } catch (err) {
     res.status(500).json({ error: err.message || String(err) });
