@@ -71,6 +71,10 @@
     .history-meta { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
     .history-scores { display: flex; gap: 12px; font-size: 12px; font-weight: 600; }
     .history-scores span { opacity: .8; }
+    .tx-status { font-size: 12px; padding: 4px 10px; border-radius: 4px; background: var(--raised); color: var(--muted); }
+    .tx-status.pending { background: rgba(234,179,8,.15); color: #fde68a; }
+    .tx-status.finalized { background: rgba(34,197,94,.15); color: #86efac; }
+    .tx-status.failed { background: rgba(239,68,68,.15); color: #fca5a5; }
     .hidden { display: none !important; }
   </style>
 </head>
@@ -100,6 +104,7 @@
       <button class="btn btn-ghost btn-sm hidden" id="refreshBtn" onclick="window.refreshResult()">↻ Refresh</button>
       <button class="btn btn-ghost btn-sm" id="historyBtn" onclick="window.loadHistory()">📋 History</button>
       <span id="auditCount"></span>
+      <span id="txStatus" class="tx-status hidden"></span>
     </div>
   </div>
 
@@ -176,7 +181,7 @@
 
   // Score contract
   window.scoreContract = async function() {
-    const sourceCode = document.getElementById('sourceCode').value.trim();
+    var sourceCode = document.getElementById('sourceCode').value.trim();
     if (!sourceCode) return window.showError('Paste some source code first.');
     if (!window.walletAddress) return window.showError('Connect your wallet first.');
 
@@ -185,27 +190,40 @@
     window.showLog();
     window.setScoring(true);
     if (window.pollTimer) clearInterval(window.pollTimer);
+    
+    // Show status in toolbar
+    var statusEl = document.getElementById('txStatus');
+    statusEl.textContent = 'Submitting…';
+    statusEl.className = 'tx-status pending';
+    window.show('txStatus');
 
     try {
-      const res = await fetch('/api/score', {
+      var res = await fetch('/api/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sourceCode: sourceCode })
       });
-      const data = await res.json();
+      var data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
       
       window.appendLog('→ TX: ' + data.txHash);
       window.appendLog('→ Polling…');
+      statusEl.textContent = 'Pending…';
       
-      const poll = async function() {
-        const r = await fetch('/api/status/' + data.txHash);
-        const result = await r.json();
+      var poll = async function() {
+        var r = await fetch('/api/status/' + data.txHash);
+        var result = await r.json();
+        statusEl.textContent = result.status || 'Pending…';
+        
         if (result.done) {
           clearInterval(window.pollTimer);
           if (result.error) {
+            statusEl.textContent = 'Failed';
+            statusEl.className = 'tx-status failed';
             window.showError(result.error);
           } else if (result.result) {
+            statusEl.textContent = 'Finalized ✓';
+            statusEl.className = 'tx-status finalized';
             window.appendLog('→ Done!');
             window.renderResult(result.result);
           }
@@ -215,6 +233,8 @@
       poll();
       window.pollTimer = setInterval(poll, 4000);
     } catch (err) {
+      statusEl.textContent = 'Error';
+      statusEl.className = 'tx-status failed';
       window.showError(err.message);
       window.setScoring(false);
     }
