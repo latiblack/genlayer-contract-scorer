@@ -23,28 +23,42 @@ function makeClient() {
 }
 
 /**
- * Parse the structured audit result string from the contract.
- * The contract returns format:
- *   Overall: 60 | Quality: 70 | Security: 50
- *   Summary: <text>
- *   Vulnerabilities:
- *     [CRITICAL] <desc>
- *     [MEDIUM] <desc>
- *     [LOW] <desc>
+ * Parse the audit result from the contract.
+ * The contract returns JSON format:
+ *   {"overall": int, "quality": int, "security": int, "summary": str, "vulnerabilities": str}
  */
 function parseScoreResult(raw) {
   let text = typeof raw === 'string' ? raw : JSON.stringify(raw);
   text = text.trim();
-  // Strip surrounding quotes if present
-  if ((text.startsWith('"') && text.endsWith('"')) ||
-      (text.startsWith("'") && text.endsWith("'"))) {
-    try { text = JSON.parse(text); } catch { /* leave as-is */ }
-  }
-  text = text.replace(/\\n/g, '\n').trim();
 
+  // Try parsing as JSON first (new contract format)
+  try {
+    const data = JSON.parse(text);
+    if (typeof data === 'object' && data !== null) {
+      let vulnerabilities = [];
+      if (data.vulnerabilities) {
+        try {
+          vulnerabilities = JSON.parse(data.vulnerabilities);
+        } catch {
+          vulnerabilities = typeof data.vulnerabilities === 'string'
+            ? JSON.parse(data.vulnerabilities)
+            : (data.vulnerabilities || []);
+        }
+      }
+      return {
+        overall: data.overall ?? data.overall ?? null,
+        quality: data.quality ?? data.quality ?? null,
+        security: data.security ?? data.security ?? null,
+        summary: data.summary || '',
+        vulnerabilities: Array.isArray(vulnerabilities) ? vulnerabilities : [],
+      };
+    }
+  } catch { /* not JSON, try old format */ }
+
+  // Fallback to old text format parsing
+  text = text.replace(/\\n/g, '\n').trim();
   const result = { overall: null, quality: null, security: null, summary: '', vulnerabilities: [] };
 
-  // Extract scores
   const m = text.match(/Overall:\s*(\d+)\s*\|\s*Quality:\s*(\d+)\s*\|\s*Security:\s*(\d+)/i);
   if (m) {
     result.overall = parseInt(m[1]);
@@ -52,13 +66,11 @@ function parseScoreResult(raw) {
     result.security = parseInt(m[3]);
   }
 
-  // Extract summary line
   const sm = text.match(/Summary:\s*(.+)/i);
   if (sm) {
     result.summary = sm[1].trim();
   }
 
-  // Extract vulnerabilities
   result.vulnerabilities = (text.match(/\[(CRITICAL|MEDIUM|LOW)\][^\n]*/gi) || [])
     .map(line => {
       const v = line.match(/\[(CRITICAL|MEDIUM|LOW)\]\s*(.+)/i);
