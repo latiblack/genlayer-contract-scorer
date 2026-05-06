@@ -103,6 +103,29 @@ app.get('/api/status/:txHash', async (req, res) => {
   }
 });
 
+// History endpoint
+app.get('/api/history/:walletAddress', async (req, res) => {
+  const address = process.env.CONTRACT_ADDRESS || '';
+  if (!address || address.startsWith('0x_')) {
+    return res.status(400).json({ error: 'CONTRACT_ADDRESS is not set in .env' });
+  }
+
+  try {
+    const rpcUrl = process.env.RPC_URL || 'https://studio.genlayer.com/api';
+    const account = createAccount(process.env.PRIVATE_KEY);
+    const client = createClient({ chain: studionet, endpoint: rpcUrl, account });
+    
+    const raw = await client.readContract({
+      address,
+      functionName: 'get_my_audits',
+      args: [],
+    });
+    res.json({ audits: raw.audits || [], count: raw.count || 0 });
+  } catch (err) {
+    res.status(500).json({ error: err.message || String(err) });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log('\nGenLayer Contract Scorer → http://localhost:' + PORT);

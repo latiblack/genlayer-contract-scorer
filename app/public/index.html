@@ -241,14 +241,44 @@
   };
 
   window.refreshResult = function() {
-    // Refresh would call backend
+    if (!window.walletAddress) return window.showError('Connect wallet first.');
+    window.loadHistory();
   };
 
-  window.loadHistory = function() {
+  window.loadHistory = async function() {
     if (!window.walletAddress) return window.showError('Connect wallet first.');
     window.hideError();
     window.show('historyCard');
-    document.getElementById('historyList').innerHTML = '<div style="color:var(--muted)">History will show here after audits.</div>';
+    
+    try {
+      var res = await fetch('/api/history/' + window.walletAddress);
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      
+      var audits = data.audits || [];
+      var count = data.count || 0;
+      
+      if (count === 0) {
+        document.getElementById('historyList').innerHTML = '<div style="color:var(--muted)">No audits yet.</div>';
+        return;
+      }
+      
+      document.getElementById('historyList').innerHTML = audits.slice().reverse().map(function(a, i) {
+        return '<div class="history-item" onclick="window.renderResult(' + window.esc(JSON.stringify(a)) + ')">' +
+          '<div class="history-meta">Audit #' + (a.id || audits.length - 1 - i) + '</div>' +
+          '<div class="history-scores">' +
+            '<span style="color:' + window.gradeColor(a.overall) + '">Overall: ' + (a.overall || '?') + '</span>' +
+            '<span style="color:' + window.gradeColor(a.quality) + '">Quality: ' + (a.quality || '?') + '</span>' +
+            '<span style="color:' + window.gradeColor(a.security) + '">Security: ' + (a.security || '?') + '</span>' +
+          '</div>' +
+          (a.summary ? '<div style="font-size:12px;color:var(--muted);margin-top:4px">' + window.esc(a.summary) + '</div>' : '') +
+        '</div>';
+      }).join('');
+      
+      document.getElementById('auditCount').textContent = count + ' audit' + (count !== 1 ? 's' : '');
+    } catch (err) {
+      document.getElementById('historyList').innerHTML = '<div style="color:var(--muted)">Error: ' + window.esc(err.message) + '</div>';
+    }
   };
 
   window.renderResult = function(data) {
@@ -300,6 +330,11 @@
 
   window.gradeClass = function(score) {
     return score >= 70 ? 'good' : score >= 40 ? 'mid' : 'bad';
+  };
+
+  window.gradeColor = function(score) {
+    if (score == null) return 'var(--muted)';
+    return score >= 70 ? 'var(--good)' : score >= 40 ? 'var(--warn)' : 'var(--bad)';
   };
 
   window.clearResult = function() {
