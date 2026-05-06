@@ -171,24 +171,23 @@ app.get('/api/status/:txHash', async (req, res) => {
 
     if (done) {
       console.log('Transaction finalized, reading contract...');
-      const account = createAccount(process.env.PRIVATE_KEY);
       const queryAddr = String(account.address);
-      console.log('Reading get_latest_audit for:', queryAddr);
+      console.log('Reading get_my_audits for sender:', queryAddr);
       try {
         const raw = await client.readContract({
           address,
-          functionName: 'get_latest_audit',
-          args: [queryAddr],
+          functionName: 'get_my_audits',
+          args: [],
         });
         console.log('Contract read result:', raw);
-        return res.json({ status, done: true, result: parseScoreResult(raw) });
+        if (raw && raw.audits && raw.audits.length > 0) {
+          const latest = raw.audits[raw.audits.length - 1];
+          return res.json({ status, done: true, result: parseScoreResult(latest) });
+        }
+        return res.json({ status, done: true, result: { overall: null, quality: null, security: null, summary: 'No audits yet', vulnerabilities: [] } });
       } catch (readErr) {
         const errMsg = readErr.message || String(readErr);
         console.error('Read error:', errMsg);
-        // Check if it's "no audits" - return empty result
-        if (errMsg.includes('No audits found')) {
-          return res.json({ status, done: true, result: { overall: null, quality: null, security: null, summary: 'No audits yet', vulnerabilities: [] } });
-        }
         return res.json({ status, done: true, error: 'Read failed: ' + errMsg });
       }
     }
@@ -211,13 +210,17 @@ app.get('/api/result', async (req, res) => {
 
   try {
     const client = makeClient();
-    const account = createAccount(process.env.PRIVATE_KEY);
     const raw = await client.readContract({
       address,
-      functionName: 'get_latest_audit',
-      args: [account.address],
+      functionName: 'get_my_audits',
+      args: [],
     });
-    res.json({ data: parseScoreResult(raw) });
+    if (raw && raw.audits && raw.audits.length > 0) {
+      const latest = raw.audits[raw.audits.length - 1];
+      res.json({ data: parseScoreResult(latest) });
+    } else {
+      res.json({ data: { overall: null, quality: null, security: null, summary: 'No audits yet', vulnerabilities: [] } });
+    }
   } catch (err) {
     res.status(500).json({ error: err.message || String(err) });
   }
@@ -231,31 +234,17 @@ app.get('/api/history', async (req, res) => {
     return res.status(400).json({ error: 'CONTRACT_ADDRESS is not set in .env' });
   }
 
-  try {
+try {
     const client = makeClient();
-    const account = createAccount(process.env.PRIVATE_KEY);
-
-    // Get count first
-    const count = await client.readContract({
+    const raw = await client.readContract({
       address,
-      functionName: 'get_audit_count',
-      args: [account.address],
+      functionName: 'get_my_audits',
+      args: [],
     });
-
-    const numAudits = parseInt(count) || 0;
-    const audits = [];
-
-    for (let i = 0; i < numAudits; i++) {
-      try {
-        const raw = await client.readContract({
-          address,
-          functionName: 'get_audit',
-          args: [account.address, i],
-        });
-        audits.push({ id: i, ...parseScoreResult(raw) });
-      } catch {
-        break; // stop if we hit an invalid index
-      }
+    res.json({ audits: raw.audits || [], count: raw.count || 0 });
+  } catch (err) {
+    res.status(500).json({ error: err.message || String(err) });
+  }
     }
 
     res.json({ audits, count: numAudits });
