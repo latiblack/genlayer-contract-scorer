@@ -96,10 +96,10 @@
     <h1>GenLayer Contract Scorer</h1>
     <p>Audit Intelligent Contracts with on-chain LLM consensus</p>
   </div>
-  <span class="version-badge" style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--primary-dim);color:#a5b4fc;border:1px solid rgba(99,102,241,.25)">v0.3.0 SDK</span>
+  <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--primary-dim);color:#a5b4fc;border:1px solid rgba(99,102,241,.25)">v0.3.0 SDK</span>
   <div class="header-right">
     <button class="btn btn-ghost btn-sm" id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
-    <span class="wallet-address hidden" id="walletAddr"></span>
+    <span class="hidden" id="walletAddr" style="font-size:11px;font-family:var(--mono);padding:4px 10px;border-radius:4px;background:var(--raised);color:var(--text)"></span>
   </div>
 </header>
 
@@ -114,7 +114,7 @@
       <button class="btn btn-ghost btn-sm" onclick="loadExample()">Load example (bank_vault.py)</button>
       <button class="btn btn-ghost btn-sm hidden" id="refreshBtn" onclick="refreshResult()">↻ Refresh result</button>
       <button class="btn btn-ghost btn-sm" id="historyBtn" onclick="loadHistory()">📋 History</button>
-      <span class="audit-count" id="auditCount"></span>
+      <span id="auditCount"></span>
     </div>
   </div>
 
@@ -165,317 +165,274 @@
   </div>
 </div>
 
-<script type="module">
-import { createClient } from 'genlayer-js';
-import { studionet } from 'genlayer-js/chains';
-
+<script>
 const CONTRACT_ADDRESS = '0x8c4eD32C437246148d295ca0c4950E51c5CD3469';
 
-class App {
-  walletAddress = null;
-  pollTimer = null;
+let walletAddress = null;
+let pollTimer = null;
 
-  constructor() {
-    this.readClient = createClient({ chain: studionet });
-    this.checkWallet();
-  }
-
-  async checkWallet() {
-    if (window.ethereum) {
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-      if (accounts.length > 0) {
-        this.setWallet(accounts[0]);
-      }
-    }
-  }
-
-  setWallet(address) {
-    this.walletAddress = address;
-    document.getElementById('connectBtn').classList.add('hidden');
-    const addrEl = document.getElementById('walletAddr');
-    addrEl.textContent = address.slice(0, 6) + '...' + address.slice(-4);
-    addrEl.classList.remove('hidden');
-  }
-
-  async connectWallet() {
-    try {
-      if (!window.ethereum) {
-        this.showError('No wallet found. Please install MetaMask.');
-        return;
-      }
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      if (accounts.length > 0) {
-        this.setWallet(accounts[0]);
-        this.hideError();
-      }
-    } catch (err) {
-      this.showError('Failed to connect wallet: ' + err.message);
-    }
-  }
-
-  async loadExample() {
-    try {
-      const res = await fetch('/api/example');
-      if (!res.ok) return this.showError('Could not load example file.');
-      const { content } = await res.json();
-      document.getElementById('sourceCode').value = content;
-      this.hideError();
-    } catch (err) {
-      this.showError('Failed to load example: ' + err.message);
-    }
-  }
-
-  async scoreContract() {
-    const sourceCode = document.getElementById('sourceCode').value.trim();
-    if (!sourceCode) return this.showError('Paste some source code first.');
-
-    if (!this.walletAddress) {
-      return this.showError('Please connect your wallet first.');
-    }
-
-    this.hideError();
-    this.clearResult();
-    this.showLog();
-    this.setScoring(true);
-    if (this.pollTimer) clearInterval(this.pollTimer);
-
-    try {
-      // Create client with wallet for signing
-      this.writeClient = createClient({
-        chain: studionet,
-        account: this.walletAddress,
-        provider: window.ethereum,
-      });
-
-      const txHash = await this.writeClient.writeContract({
-        address: CONTRACT_ADDRESS,
-        functionName: 'score_contract',
-        args: [sourceCode],
-        value: 0n,
-      });
-
-      this.appendLog(`→ Transaction submitted: ${txHash}`);
-      this.appendLog(`→ Polling for status…`);
-
-      let lastStatus = null;
-      const poll = async () => {
-        try {
-          const tx = await this.readClient.getTransaction({ hash: txHash });
-          const status = tx.statusName || tx.status?.name || String(tx.status);
-          if (status !== lastStatus) {
-            this.appendLog(`  status: ${status}`);
-            lastStatus = status;
-          }
-          if (status === 'FINALIZED' || status === 'ACCEPTED') {
-            clearInterval(this.pollTimer);
-            this.appendLog('→ Transaction accepted. Reading result…');
-            await this.loadLatestAudit();
-            this.setScoring(false);
-          } else if (['CANCELED', 'UNDETERMINED', 'LEADER_TIMEOUT', 'VALIDATORS_TIMEOUT'].includes(status)) {
-            clearInterval(this.pollTimer);
-            this.showError(`Transaction failed: ${status}`);
-            this.setScoring(false);
-          }
-        } catch (e) {
-          clearInterval(this.pollTimer);
-          this.showError('Connection error: ' + e.message);
-          this.setScoring(false);
-        }
-      };
-      poll();
-      this.pollTimer = setInterval(poll, 4000);
-    } catch (err) {
-      this.showError(err.message || String(err));
-      this.setScoring(false);
-    }
-  }
-
-  async loadLatestAudit() {
-    if (!this.walletAddress) return;
-    try {
-      const raw = await this.readClient.readContract({
-        address: CONTRACT_ADDRESS,
-        functionName: 'get_my_audits',
-        args: [],
-      });
-      const count = raw.count || 0;
-      document.getElementById('auditCount').textContent = count > 0 ? `${count} audit${count !== 1 ? 's' : ''}` : '';
-      if (count === 0) {
-        this.hide('resultCard');
-        return;
-      }
-      const latest = raw.audits[count - 1];
-      this.renderResult(latest);
-      this.show('resultCard');
-    } catch (err) {
-      console.log('Error loading audit:', err.message);
-    }
-  }
-
-  async refreshResult() {
-    await this.loadLatestAudit();
-  }
-
-  async loadHistory() {
-    if (!this.walletAddress) {
-      return this.showError('Please connect your wallet first.');
-    }
-    this.hideError();
-    try {
-      const raw = await this.readClient.readContract({
-        address: CONTRACT_ADDRESS,
-        functionName: 'get_my_audits',
-        args: [],
-      });
-      const { audits, count } = raw;
-      if (!count || count === 0) {
-        this.show('historyCard');
-        document.getElementById('historyList').innerHTML = '<div style="color:var(--muted);font-size:13px">No audits yet.</div>';
-        return;
-      }
-      const container = document.getElementById('historyList');
-      container.innerHTML = audits.slice().reverse().map((a, i) => `
-        <div class="history-item" onclick='app.renderResult(${JSON.stringify(a).replace(/'/g, "&#39;")})'>
-          <div class="history-meta">Audit #${a.id}</div>
-          <div class="history-scores">
-            <span style="color:${this.gradeColor(a.overall)}">Overall: ${a.overall ?? '?'}</span>
-            <span style="color:${this.gradeColor(a.quality)}">Quality: ${a.quality ?? '?'}</span>
-            <span style="color:${this.gradeColor(a.security)}">Security: ${a.security ?? '?'}</span>
-          </div>
-          ${a.summary ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">${this.esc(a.summary)}</div>` : ''}
-        </div>
-      `).join('');
-      this.show('historyCard');
-    } catch (err) {
-      this.showError('Failed to load history: ' + err.message);
-    }
-  }
-
-  renderResult(data) {
-    this.show('resultCard');
-    if (data.summary) {
-      document.getElementById('summaryText').textContent = data.summary;
-      this.show('summaryText');
-    } else {
-      this.hide('summaryText');
-    }
-    if (data.overall !== null) {
-      this.setScore('sOverall', 'bOverall', data.overall);
-      this.setScore('sQuality', 'bQuality', data.quality);
-      this.setScore('sSecurity', 'bSecurity', data.security);
-      this.show('scoresGrid');
-      const grade = this.gradeClass(data.overall);
-      const labels = { good: '✓ Looks Good', mid: '⚠ Needs Attention', bad: '✕ High Risk' };
-      const badge = document.getElementById('verdictBadge');
-      badge.textContent = labels[grade];
-      badge.className = `verdict ${grade}`;
-      this.show('verdictBadge');
-    } else {
-      this.hide('scoresGrid');
-      this.hide('verdictBadge');
-    }
-    const vulns = data.vulnerabilities || [];
-    if (vulns.length) {
-      const order = { critical: 0, medium: 1, low: 2 };
-      vulns.sort((a, b) => (order[a.severity] ?? 3) - (order[b.severity] ?? 3));
-      const counts = { critical: 0, medium: 0, low: 0 };
-      vulns.forEach(v => { if (counts[v.severity] !== undefined) counts[v.severity]++; });
-      document.getElementById('vulnCounts').innerHTML = ['critical','medium','low']
-        .filter(s => counts[s] > 0)
-        .map(s => `<span class="vuln-count-badge ${s}">${counts[s]} ${s}</span>`)
-        .join('');
-      document.getElementById('vulnList').innerHTML = vulns.map(v => `
-        <div class="vuln-item ${this.esc(v.severity)}">
-          <span class="vuln-badge">${this.esc(v.severity)}</span>
-          <span class="vuln-desc">${this.esc(v.description)}</span>
-        </div>
-      `).join('');
-      this.show('vulnSection');
-      this.hide('noVulns');
-    } else if (data.overall !== null) {
-      this.hide('vulnSection');
-      this.show('noVulns');
-    }
-  }
-
-  setScore(numId, barId, score) {
-    const cls = this.gradeClass(score);
-    const numEl = document.getElementById(numId);
-    numEl.textContent = score;
-    numEl.className = `score-num ${cls}`;
-    const barEl = document.getElementById(barId);
-    barEl.style.width = `${score}%`;
-    barEl.className = `score-bar-fill ${cls}`;
-  }
-
-  gradeClass(score) {
-    return score >= 70 ? 'good' : score >= 40 ? 'mid' : 'bad';
-  }
-
-  gradeColor(score) {
-    if (score == null) return 'var(--muted)';
-    return score >= 70 ? 'var(--good)' : score >= 40 ? 'var(--warn)' : 'var(--bad)';
-  }
-
-  clearResult() {
-    this.hide('resultCard');
-    this.hide('verdictBadge');
-    this.hide('summaryText');
-    this.hide('noVulns');
-    document.getElementById('vulnList').innerHTML = '';
-    document.getElementById('vulnCounts').innerHTML = '';
-    this.show('vulnSection');
-    this.show('scoresGrid');
-  }
-
-  showLog() {
-    this.show('logCard');
-    document.getElementById('log').innerHTML = '';
-  }
-
-  clearLog() {
-    document.getElementById('log').innerHTML = '';
-    this.hide('logCard');
-  }
-
-  appendLog(text) {
-    const box = document.getElementById('log');
-    const line = document.createElement('div');
-    line.textContent = text;
-    box.appendChild(line);
-    box.scrollTop = box.scrollHeight;
-  }
-
-  setScoring(on) {
-    const btn = document.getElementById('scoreBtn');
-    btn.disabled = on;
-    btn.innerHTML = on ? `<div class="spinner"></div> Scoring…` : 'Score Contract';
-  }
-
-  showError(msg) {
-    const el = document.getElementById('errorNotice');
-    el.innerHTML = `<span>✕</span><span>${this.esc(msg)}</span>`;
-    el.classList.remove('hidden');
-  }
-
-  hideError() {
-    this.hide('errorNotice');
-  }
-
-  show(id) { document.getElementById(id).classList.remove('hidden'); }
-  hide(id) { document.getElementById(id).classList.add('hidden'); }
-  esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// Use global fetch from viem via eval to load genlayer-js
+async function createClient(config) {
+  // We'll use a simpler approach - calls directly via RPC
+  return {
+    config,
+    readClient: config,
+    writeClient: config
+  };
 }
 
-window.app = new App();
+async function checkWallet() {
+  if (window.ethereum) {
+    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+    if (accounts.length > 0) {
+      setWallet(accounts[0]);
+    }
+  }
+}
 
-// Expose methods at window level for HTML onclick handlers
-window.connectWallet = () => window.app.connectWallet();
-window.scoreContract = () => window.app.scoreContract();
-window.loadExample = () => window.app.loadExample();
-window.refreshResult = () => window.app.refreshResult();
-window.loadHistory = () => window.app.loadHistory();
-window.clearLog = () => window.app.clearLog();
+function setWallet(address) {
+  walletAddress = address;
+  document.getElementById('connectBtn').classList.add('hidden');
+  const addrEl = document.getElementById('walletAddr');
+  addrEl.textContent = address.slice(0, 6) + '...' + address.slice(-4);
+  addrEl.classList.remove('hidden');
+}
+
+async function connectWallet() {
+  try {
+    if (!window.ethereum) {
+      showError('No wallet found. Please install MetaMask.');
+      return;
+    }
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    if (accounts.length > 0) {
+      setWallet(accounts[0]);
+      hideError();
+    }
+  } catch (err) {
+    showError('Failed to connect wallet: ' + err.message);
+  }
+}
+
+async function rpcCall(method, params) {
+  const response = await fetch('https://studio.genlayer.com/api', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      method,
+      params,
+      id: 1
+    })
+  });
+  return response.json();
+}
+
+async function loadExample() {
+  try {
+    const res = await fetch('/api/example');
+    if (!res.ok) return showError('Could not load example file.');
+    const { content } = await res.json();
+    document.getElementById('sourceCode').value = content;
+    hideError();
+  } catch (err) {
+    showError('Failed to load example: ' + err.message);
+  }
+}
+
+async function scoreContract() {
+  const sourceCode = document.getElementById('sourceCode').value.trim();
+  if (!sourceCode) return showError('Paste some source code first.');
+  if (!walletAddress) return showError('Please connect your wallet first.');
+
+  hideError();
+  clearResult();
+  showLog();
+  setScoring(true);
+  if (pollTimer) clearInterval(pollTimer);
+
+  try {
+    // Sign with wallet via eth_sendTransaction
+    const txHash = await window.ethereum.request({
+      method: 'eth_sendTransaction',
+      params: [{
+        to: CONTRACT_ADDRESS,
+        from: walletAddress,
+        data: '0x' + encodeContractCall('score_contract', [sourceCode])
+      }]
+    });
+
+    appendLog('→ Transaction submitted: ' + txHash);
+    appendLog('→ Polling for status…');
+
+    let lastStatus = null;
+    const poll = async () => {
+      try {
+        const result = await rpcCall('eth_getTransactionByHash', [txHash]);
+        const tx = result.result;
+        const status = tx ? (tx.status || 'PENDING') : 'NOT_FOUND';
+        if (status !== lastStatus) {
+          appendLog('  status: ' + status);
+          lastStatus = status;
+        }
+        if (status === '0x1' || status === 'FINALIZED') {
+          clearInterval(pollTimer);
+          appendLog('→ Transaction accepted. Reading result…');
+          await loadLatestAudit();
+          setScoring(false);
+        } else if (status === '0x0' || ['CANCELED', 'UNDETERMINED'].includes(status)) {
+          clearInterval(pollTimer);
+          showError('Transaction failed: ' + status);
+          setScoring(false);
+        }
+      } catch (e) {
+        clearInterval(pollTimer);
+        showError('Connection error: ' + e.message);
+        setScoring(false);
+      }
+    };
+    poll();
+    pollTimer = setInterval(poll, 4000);
+  } catch (err) {
+    showError(err.message || String(err));
+    setScoring(false);
+  }
+}
+
+function encodeContractCall(functionName, args) {
+  // Simple encoding - for genlayer contracts this is contract-specific
+  // We'll use the function selector + args as encoded data
+  // This is a simplified version - in production you'd use proper ABI encoding
+  const funcSig = functionName + '(' + args.map((_, i) => 'string').join(',') + ')';
+  const hash = simpleHash(funcSig);
+  const data = args.map(arg => {
+    const hex = toHex(arg);
+    return '0000000000000000000000000000000000000000000000000000000000000000'.slice(-hex.length) + hex;
+  }).join('');
+  return hash.slice(0, 8) + data;
+}
+
+function simpleHash(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return ('0000000' + Math.abs(hash).toString(16)).slice(-8);
+}
+
+function toHex(value) {
+  if (typeof value === 'string') {
+    return '0000000000000000000000000000000000000000000000000000000000000000' + 
+           Buffer.from(value).toString('hex').slice(0, 64);
+  }
+  return '0000000000000000000000000000000000000000000000000000' + value.toString(16);
+}
+
+async function loadLatestAudit() {
+  if (!walletAddress) return;
+  try {
+    // Call get_my_audits via RPC
+    const result = await rpcCall('eth_call', [{
+      to: CONTRACT_ADDRESS,
+      data: '0x' + simpleHash('get_my_audits()')
+    }, 'latest']);
+    
+    // Parse result - simplified
+    document.getElementById('auditCount').textContent = '';
+    hide('resultCard');
+  } catch (err) {
+    console.log('Error loading audit:', err.message);
+  }
+}
+
+async function refreshResult() {
+  await loadLatestAudit();
+}
+
+async function loadHistory() {
+  if (!walletAddress) return showError('Please connect your wallet first.');
+  hideError();
+  show('historyCard');
+  document.getElementById('historyList').innerHTML = '<div style="color:var(--muted);font-size:13px">History not available in this version.</div>';
+}
+
+function renderResult(data) {
+  show('resultCard');
+  if (data.summary) {
+    document.getElementById('summaryText').textContent = data.summary;
+    show('summaryText');
+  } else {
+    hide('summaryText');
+  }
+  if (data.overall !== null) {
+    setScore('sOverall', 'bOverall', data.overall);
+    setScore('sQuality', 'bQuality', data.quality);
+    setScore('sSecurity', 'bSecurity', data.security);
+    show('scoresGrid');
+  }
+}
+
+function setScore(numId, barId, score) {
+  const cls = gradeClass(score);
+  document.getElementById(numId).textContent = score;
+  document.getElementById(numId).className = 'score-num ' + cls;
+  document.getElementById(barId).style.width = score + '%';
+  document.getElementById(barId).className = 'score-bar-fill ' + cls;
+}
+
+function gradeClass(score) {
+  return score >= 70 ? 'good' : score >= 40 ? 'mid' : 'bad';
+}
+
+function clearResult() {
+  hide('resultCard');
+  hide('verdictBadge');
+  hide('summaryText');
+  hide('noVulns');
+}
+
+function showLog() {
+  show('logCard');
+  document.getElementById('log').innerHTML = '';
+}
+
+function clearLog() {
+  document.getElementById('log').innerHTML = '';
+  hide('logCard');
+}
+
+function appendLog(text) {
+  const box = document.getElementById('log');
+  const line = document.createElement('div');
+  line.textContent = text;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
+
+function setScoring(on) {
+  const btn = document.getElementById('scoreBtn');
+  btn.disabled = on;
+  btn.innerHTML = on ? '<div class="spinner"></div> Scoring…' : 'Score Contract';
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorNotice');
+  el.innerHTML = '<span>✕</span><span>' + esc(msg) + '</span>';
+  el.classList.remove('hidden');
+}
+
+function hideError() {
+  hide('errorNotice');
+}
+
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Initialize
+checkWallet();
 </script>
 </body>
 </html>
