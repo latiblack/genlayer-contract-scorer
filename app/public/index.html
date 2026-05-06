@@ -75,6 +75,12 @@
     .tx-status.pending { background: rgba(234,179,8,.15); color: #fde68a; }
     .tx-status.finalized { background: rgba(34,197,94,.15); color: #86efac; }
     .tx-status.failed { background: rgba(239,68,68,.15); color: #fca5a5; }
+    .progress-bar { height: 4px; background: var(--raised); border-radius: 99px; overflow: hidden; margin: 10px 0; }
+    .progress-fill { height: 100%; background: var(--primary); border-radius: 99px; transition: width .3s ease; }
+    .progress-stages { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-top: 4px; }
+    .stage { opacity: 0.5; }
+    .stage.active { opacity: 1; color: var(--primary); }
+    .stage.done { opacity: 1; color: var(--good); }
     .hidden { display: none !important; }
   </style>
 </head>
@@ -104,8 +110,19 @@
       <button class="btn btn-ghost btn-sm hidden" id="refreshBtn" onclick="window.refreshResult()">↻ Refresh</button>
       <button class="btn btn-ghost btn-sm" id="historyBtn" onclick="window.loadHistory()">📋 History</button>
       <span id="auditCount"></span>
-      <span id="txStatus" class="tx-status hidden"></span>
     </div>
+    
+    <!-- Progress bar -->
+    <div class="card hidden" id="progressCard">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="progress-stages">
+        <span class="stage" id="stage1">Submit</span>
+        <span class="stage" id="stage2">Pending</span>
+        <span class="stage" id="stage3">Consensus</span>
+        <span class="stage" id="stage4">Finalized</span>
+      </div>
+    </div>
+  </div>
   </div>
 
   <div class="card hidden" id="logCard">
@@ -191,11 +208,9 @@
     window.setScoring(true);
     if (window.pollTimer) clearInterval(window.pollTimer);
     
-    // Show status in toolbar
-    var statusEl = document.getElementById('txStatus');
-    statusEl.textContent = 'Submitting…';
-    statusEl.className = 'tx-status pending';
-    window.show('txStatus');
+    // Show progress bar
+    window.show('progressCard');
+    window.updateProgress(1);
 
     try {
       var res = await fetch('/api/score', {
@@ -207,23 +222,25 @@
       if (!res.ok) throw new Error(data.error || 'Failed');
       
       window.appendLog('→ TX: ' + data.txHash);
-      window.appendLog('→ Polling…');
-      statusEl.textContent = 'Pending…';
+      window.updateProgress(2);
       
       var poll = async function() {
         var r = await fetch('/api/status/' + data.txHash);
         var result = await r.json();
-        statusEl.textContent = result.status || 'Pending…';
+        
+        if (result.status === 'PENDING' || result.status === 'ACCEPTED') {
+          window.updateProgress(2);
+        } else if (result.status === 'COMMITTED') {
+          window.updateProgress(3);
+        } else if (result.status === 'FINALIZED') {
+          window.updateProgress(4);
+        }
         
         if (result.done) {
           clearInterval(window.pollTimer);
           if (result.error) {
-            statusEl.textContent = 'Failed';
-            statusEl.className = 'tx-status failed';
             window.showError(result.error);
           } else if (result.result) {
-            statusEl.textContent = 'Finalized ✓';
-            statusEl.className = 'tx-status finalized';
             window.appendLog('→ Done!');
             window.renderResult(result.result);
           }
@@ -233,10 +250,21 @@
       poll();
       window.pollTimer = setInterval(poll, 4000);
     } catch (err) {
-      statusEl.textContent = 'Error';
-      statusEl.className = 'tx-status failed';
+      window.hide('progressCard');
       window.showError(err.message);
       window.setScoring(false);
+    }
+  };
+
+  window.updateProgress = function(stage) {
+    var fill = document.getElementById('progressFill');
+    fill.style.width = (stage * 25) + '%';
+    
+    for (var i = 1; i <= 4; i++) {
+      var el = document.getElementById('stage' + i);
+      el.className = 'stage';
+      if (i < stage) el.className = 'stage done';
+      else if (i === stage) el.className = 'stage active';
     }
   };
 
