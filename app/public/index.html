@@ -9,16 +9,15 @@
     :root { --bg: #0f172a; --surface: #1e293b; --raised: #293548; --border: #334155; --primary: #6366f1; --primary-dim: rgba(99,102,241,.12); --text: #f1f5f9; --muted: #94a3b8; --good: #22c55e; --warn: #eab308; --bad: #ef4444; --mono: 'Cascadia Code','Fira Code','Consolas',monospace; --sans: 'Segoe UI',system-ui,-apple-system,sans-serif; --r: 8px; }
     body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; min-height: 100vh; }
     header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 28px; display: flex; align-items: center; gap: 12px; }
-    .logo { width: 34px; height: 34px; background: var(--primary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .logo { width: 34px; height: 34px; background: var(--primary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
     header h1 { font-size: 16px; font-weight: 600; }
     header p { font-size: 12px; color: var(--muted); }
-    .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
     .main { max-width: 860px; margin: 32px auto; padding: 0 24px; display: flex; flex-direction: column; gap: 20px; }
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; }
     .card-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 14px; }
     textarea { width: 100%; height: 280px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--r); padding: 12px; color: var(--text); font-family: var(--mono); font-size: 12.5px; line-height: 1.65; resize: vertical; outline: none; }
     textarea:focus { border-color: var(--primary); }
-    .toolbar { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+    .toolbar { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
     .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--r); border: none; cursor: pointer; font-size: 13px; font-weight: 500; }
     .btn:disabled { opacity: .4; cursor: not-allowed; }
     .btn-primary { background: var(--primary); color: #fff; }
@@ -64,17 +63,7 @@
     .medium .vuln-badge { background: rgba(234,179,8,.18); color: #fde68a; }
     .low .vuln-badge { background: rgba(34,197,94,.18); color: #bbf7d0; }
     .vuln-desc { font-size: 13px; line-height: 1.4; }
-    .no-vulns { color: var(--good); font-size: 13px; display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: rgba(34,197,94,.06); border-radius: var(--r); border: 1px solid rgba(34,197,94,.2); }
-    .history-list { display: flex; flex-direction: column; gap: 10px; }
-    .history-item { background: var(--bg); border: 1px solid var(--border); border-radius: var(--r); padding: 14px; cursor: pointer; transition: border-color .15s; }
-    .history-item:hover { border-color: var(--primary); }
-    .history-meta { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
-    .history-scores { display: flex; gap: 12px; font-size: 12px; font-weight: 600; }
-    .history-scores span { opacity: .8; }
-    .tx-status { font-size: 12px; padding: 4px 10px; border-radius: 4px; background: var(--raised); color: var(--muted); }
-    .tx-status.pending { background: rgba(234,179,8,.15); color: #fde68a; }
-    .tx-status.finalized { background: rgba(34,197,94,.15); color: #86efac; }
-    .tx-status.failed { background: rgba(239,68,68,.15); color: #fca5a5; }
+    .no-vulns { color: var(--good); font-size: 13px; padding: 10px 14px; background: rgba(34,197,94,.06); border-radius: var(--r); border: 1px solid rgba(34,197,94,.2); }
     .progress-bar { height: 4px; background: var(--raised); border-radius: 99px; overflow: hidden; margin: 10px 0; }
     .progress-fill { height: 100%; background: var(--primary); border-radius: 99px; transition: width .3s ease; }
     .progress-stages { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-top: 4px; }
@@ -92,10 +81,6 @@
     <p>Audit Intelligent Contracts with on-chain LLM consensus</p>
   </div>
   <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--primary-dim);color:#a5b4fc;border:1px solid rgba(99,102,241,.25)">v0.3.0 SDK</span>
-  <div class="header-right">
-    <button class="btn btn-ghost btn-sm" id="connectBtn" onclick="window.connectWallet()">Connect Wallet</button>
-    <span class="hidden" id="walletAddr"></span>
-  </div>
 </header>
 
 <div class="main">
@@ -105,28 +90,25 @@
     <div class="card-title">Contract Source Code</div>
     <textarea id="sourceCode" placeholder="Paste the full source code of the contract you want to audit…"></textarea>
     <div class="toolbar">
-      <button class="btn btn-primary" id="scoreBtn" onclick="window.scoreContract()">Score Contract</button>
-      <button class="btn btn-ghost btn-sm" onclick="window.loadExample()">Load example</button>
-      <span id="auditCount"></span>
+      <button class="btn btn-primary" id="scoreBtn" onclick="scoreContract()">Score Contract</button>
+      <button class="btn btn-ghost btn-sm" onclick="loadExample()">Load example</button>
     </div>
     
-    <!-- Progress bar -->
-    <div class="card hidden" id="progressCard">
+    <div class="card hidden" id="progressCard" style="margin-top:15px">
       <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
       <div class="progress-stages">
         <span class="stage" id="stage1">Submit</span>
-        <span class="stage" id="stage2">Pending</span>
-        <span class="stage" id="stage3">Consensus</span>
+        <span class="stage" id="stage2">LLM Processing</span>
+        <span class="stage" id="stage3">Validation</span>
         <span class="stage" id="stage4">Finalized</span>
       </div>
     </div>
-  </div>
   </div>
 
   <div class="card hidden" id="logCard">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <div class="card-title" style="margin:0">Output</div>
-      <button class="btn btn-ghost btn-sm" onclick="window.clearLog()">Clear</button>
+      <button class="btn btn-ghost btn-sm" onclick="clearLog()">Clear</button>
     </div>
     <div class="log" id="log"></div>
   </div>
@@ -152,264 +134,166 @@
 </div>
 
 <script>
-// Store everything on window
-(function() {
-  window.CONTRACT_ADDRESS = '0x8c4eD32C437246148d295ca0c4950E51c5CD3469';
-  window.walletAddress = null;
-  window.pollTimer = null;
+var pollTimer = null;
 
-  // Connect wallet
-  window.connectWallet = async function() {
-    try {
-      if (!window.ethereum) throw new Error('No wallet found. Install MetaMask.');
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      if (accounts.length === 0) throw new Error('No account found');
-      
-      window.walletAddress = accounts[0];
-      document.getElementById('connectBtn').classList.add('hidden');
-      const addrEl = document.getElementById('walletAddr');
-      addrEl.textContent = accounts[0].slice(0, 6) + '...' + accounts[0].slice(-4);
-      addrEl.classList.remove('hidden');
-      window.hideError();
-    } catch (err) {
-      window.showError(err.message);
-    }
-  };
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function gradeClass(score) { return score >= 70 ? 'good' : score >= 40 ? 'mid' : 'bad'; }
+function gradeColor(score) { return score == null ? 'var(--muted)' : score >= 70 ? 'var(--good)' : score >= 40 ? 'var(--warn)' : 'var(--bad)'; }
 
-  // Load example
-  window.loadExample = async function() {
-    try {
-      const res = await fetch('/api/example');
-      if (!res.ok) throw new Error('Could not load example');
-      const { content } = await res.json();
-      document.getElementById('sourceCode').value = content;
-      window.hideError();
-    } catch (err) {
-      window.showError(err.message);
-    }
-  };
+function updateProgress(stage) {
+  document.getElementById('progressFill').style.width = (stage * 25) + '%';
+  for (var i = 1; i <= 4; i++) {
+    var el = document.getElementById('stage' + i);
+    el.className = 'stage';
+    if (i < stage) el.className = 'stage done';
+    else if (i === stage) el.className = 'stage active';
+  }
+}
 
-  // Score contract
-  window.scoreContract = async function() {
-    var sourceCode = document.getElementById('sourceCode').value.trim();
-    if (!sourceCode) return window.showError('Paste some source code first.');
-    if (!window.walletAddress) return window.showError('Connect your wallet first.');
+async function loadExample() {
+  var res = await fetch('/api/example');
+  var data = await res.json();
+  document.getElementById('sourceCode').value = data.content;
+  hideError();
+}
 
-    window.hideError();
-    window.clearResult();
-    window.showLog();
-    window.setScoring(true);
-    if (window.pollTimer) clearInterval(window.pollTimer);
+async function scoreContract() {
+  var sourceCode = document.getElementById('sourceCode').value.trim();
+  if (!sourceCode) return showError('Paste some source code first.');
+
+  hideError();
+  clearResult();
+  showLog();
+  setScoring(true);
+  if (pollTimer) clearInterval(pollTimer);
+  
+  show('progressCard');
+  updateProgress(1);
+
+  try {
+    var res = await fetch('/api/score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sourceCode: sourceCode })
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error);
     
-    // Show progress bar
-    window.show('progressCard');
-    window.updateProgress(1);
-
-    try {
-      var res = await fetch('/api/score', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sourceCode: sourceCode })
-      });
-      var data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed');
-      
-      window.appendLog('→ TX: ' + data.txHash);
-      window.updateProgress(2);
-      
-      var poll = async function() {
-        var r = await fetch('/api/status/' + data.txHash);
-        var result = await r.json();
-        
-        if (result.status === 'PENDING' || result.status === 'ACCEPTED') {
-          window.updateProgress(2);
-        } else if (result.status === 'COMMITTED') {
-          window.updateProgress(3);
-        } else if (result.status === 'FINALIZED') {
-          window.updateProgress(4);
-        }
-        
-        if (result.done) {
-          clearInterval(window.pollTimer);
-          if (result.error) {
-            window.showError(result.error);
-          } else if (result.result) {
-            window.appendLog('→ Done!');
-            window.renderResult(result.result);
-          }
-          window.setScoring(false);
-        }
-      };
-      poll();
-      window.pollTimer = setInterval(poll, 4000);
-    } catch (err) {
-      window.hide('progressCard');
-      window.showError(err.message);
-      window.setScoring(false);
-    }
-  };
-
-  window.updateProgress = function(stage) {
-    var fill = document.getElementById('progressFill');
-    fill.style.width = (stage * 25) + '%';
+    appendLog('→ TX: ' + data.txHash);
+    updateProgress(2);
     
-    for (var i = 1; i <= 4; i++) {
-      var el = document.getElementById('stage' + i);
-      el.className = 'stage';
-      if (i < stage) el.className = 'stage done';
-      else if (i === stage) el.className = 'stage active';
-    }
-  };
-
-  window.refreshResult = function() {
-    if (!window.walletAddress) return window.showError('Connect wallet first.');
-    window.loadHistory();
-  };
-
-  window.loadHistory = async function() {
-    if (!window.walletAddress) return window.showError('Connect wallet first.');
-    window.hideError();
-    window.show('historyCard');
-    
-    try {
-      var res = await fetch('/api/history/' + window.walletAddress);
-      var data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed');
+    var poll = async function() {
+      var r = await fetch('/api/status/' + data.txHash);
+      var result = await r.json();
       
-      var audits = data.audits || [];
-      var count = data.count || 0;
-      
-      if (count === 0) {
-        document.getElementById('historyList').innerHTML = '<div style="color:var(--muted)">No audits yet.</div>';
-        return;
+      // Map status to stages
+      if (result.status === 'PENDING' || result.status === 'ACCEPTED') {
+        updateProgress(2);
+      } else if (result.status === 'COMMITTED' || result.status === 'VALIDATING') {
+        updateProgress(3);
+      } else if (result.status === 'FINALIZED') {
+        updateProgress(4);
       }
       
-      document.getElementById('historyList').innerHTML = audits.slice().reverse().map(function(a, i) {
-        return '<div class="history-item" onclick="window.renderResult(' + window.esc(JSON.stringify(a)) + ')">' +
-          '<div class="history-meta">Audit #' + (a.id || audits.length - 1 - i) + '</div>' +
-          '<div class="history-scores">' +
-            '<span style="color:' + window.gradeColor(a.overall) + '">Overall: ' + (a.overall || '?') + '</span>' +
-            '<span style="color:' + window.gradeColor(a.quality) + '">Quality: ' + (a.quality || '?') + '</span>' +
-            '<span style="color:' + window.gradeColor(a.security) + '">Security: ' + (a.security || '?') + '</span>' +
-          '</div>' +
-          (a.summary ? '<div style="font-size:12px;color:var(--muted);margin-top:4px">' + window.esc(a.summary) + '</div>' : '') +
-        '</div>';
-      }).join('');
-      
-      document.getElementById('auditCount').textContent = count + ' audit' + (count !== 1 ? 's' : '');
-    } catch (err) {
-      document.getElementById('historyList').innerHTML = '<div style="color:var(--muted)">Error: ' + window.esc(err.message) + '</div>';
-    }
-  };
-
-  window.renderResult = function(data) {
-    window.show('resultCard');
-    if (data.summary) {
-      document.getElementById('summaryText').textContent = data.summary;
-      window.show('summaryText');
-    }
-    if (data.overall !== null) {
-      window.setScore('sOverall', 'bOverall', data.overall);
-      window.setScore('sQuality', 'bQuality', data.quality);
-      window.setScore('sSecurity', 'bSecurity', data.security);
-      window.show('scoresGrid');
-      const cls = window.gradeClass(data.overall);
-      const labels = { good: '✓ Looks Good', mid: '⚠ Needs Attention', bad: '✕ High Risk' };
-      const badge = document.getElementById('verdictBadge');
-      badge.textContent = labels[cls];
-      badge.className = 'verdict ' + cls;
-      window.show('verdictBadge');
-    }
-    
-    // Handle vulnerabilities - might be string needing parse
-    var vulns = data.vulnerabilities || [];
-    if (typeof vulns === 'string') {
-      try { vulns = JSON.parse(vulns); } catch(e) { vulns = []; }
-    }
-    if (vulns && vulns.length > 0) {
-      var order = { critical: 0, medium: 1, low: 2 };
-      vulns.sort(function(a, b) { return (order[a.severity] || 3) - (order[b.severity] || 3); });
-      var counts = { critical: 0, medium: 0, low: 0 };
-      vulns.forEach(function(v) { if (counts[v.severity] !== undefined) counts[v.severity]++; });
-      document.getElementById('vulnCounts').innerHTML = ['critical','medium','low'].filter(function(s) { return counts[s] > 0; }).map(function(s) { return '<span class="vuln-count-badge ' + s + '">' + counts[s] + ' ' + s + '</span>'; }).join('');
-      document.getElementById('vulnList').innerHTML = vulns.map(function(v) { return '<div class="vuln-item ' + (v.severity || 'low') + '"><span class="vuln-badge">' + (v.severity || 'low') + '</span><span class="vuln-desc">' + window.esc(v.description || '') + '</span></div>'; }).join('');
-      window.show('vulnSection');
-      window.hide('noVulns');
-    } else if (data.overall !== null) {
-      window.hide('vulnSection');
-      window.show('noVulns');
-    }
-  };
-
-  window.setScore = function(numId, barId, score) {
-    const cls = window.gradeClass(score);
-    document.getElementById(numId).textContent = score;
-    document.getElementById(numId).className = 'score-num ' + cls;
-    document.getElementById(barId).style.width = score + '%';
-    document.getElementById(barId).className = 'score-bar-fill ' + cls;
-  };
-
-  window.gradeClass = function(score) {
-    return score >= 70 ? 'good' : score >= 40 ? 'mid' : 'bad';
-  };
-
-  window.gradeColor = function(score) {
-    if (score == null) return 'var(--muted)';
-    return score >= 70 ? 'var(--good)' : score >= 40 ? 'var(--warn)' : 'var(--bad)';
-  };
-
-  window.clearResult = function() {
-    window.hide('resultCard');
-    window.hide('verdictBadge');
-    window.hide('summaryText');
-    window.hide('noVulns');
-  };
-
-  window.showLog = function() {
-    window.show('logCard');
-    document.getElementById('log').innerHTML = '';
-  };
-
-  window.clearLog = function() {
-    document.getElementById('log').innerHTML = '';
-    window.hide('logCard');
-  };
-
-  window.appendLog = function(text) {
-    const box = document.getElementById('log');
-    const line = document.createElement('div');
-    line.textContent = text;
-    box.appendChild(line);
-    box.scrollTop = box.scrollHeight;
-  };
-
-  window.setScoring = function(on) {
-    const btn = document.getElementById('scoreBtn');
-    btn.disabled = on;
-    btn.innerHTML = on ? '<div class="spinner"></div> Scoring…' : 'Score Contract';
-  };
-
-  window.showError = function(msg) {
-    const el = document.getElementById('errorNotice');
-    el.innerHTML = '<span>✕</span><span>' + window.esc(msg) + '</span>';
-    el.classList.remove('hidden');
-  };
-
-  window.hideError = function() {
-    window.hide('errorNotice');
-  };
-
-  window.show = function(id) { document.getElementById(id).classList.remove('hidden'); };
-  window.hide = function(id) { document.getElementById(id).classList.add('hidden'); };
-  window.esc = function(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
-
-  // Init - check if wallet already connected
-  if (window.ethereum) {
-    window.ethereum.request({ method: 'eth_accounts' }).then(function(accounts) {
-      if (accounts.length > 0) window.connectWallet();
-    });
+      if (result.done) {
+        clearInterval(pollTimer);
+        if (result.error) showError(result.error);
+        else if (result.result) {
+          appendLog('→ Done!');
+          renderResult(result.result);
+        }
+        setScoring(false);
+      }
+    };
+    poll();
+    pollTimer = setInterval(poll, 4000);
+  } catch (err) {
+    hide('progressCard');
+    showError(err.message);
+    setScoring(false);
   }
-})();
+}
+
+function renderResult(data) {
+  show('resultCard');
+  if (data.summary) {
+    document.getElementById('summaryText').textContent = data.summary;
+    show('summaryText');
+  } else hide('summaryText');
+  
+  if (data.overall !== null) {
+    setScore('sOverall', 'bOverall', data.overall);
+    setScore('sQuality', 'bQuality', data.quality);
+    setScore('sSecurity', 'bSecurity', data.security);
+    show('scoresGrid');
+    var cls = gradeClass(data.overall);
+    var labels = { good: '✓ Looks Good', mid: '⚠ Needs Attention', bad: '✕ High Risk' };
+    var badge = document.getElementById('verdictBadge');
+    badge.textContent = labels[cls];
+    badge.className = 'verdict ' + cls;
+    show('verdictBadge');
+  } else {
+    hide('scoresGrid');
+    hide('verdictBadge');
+  }
+  
+  var vulns = data.vulnerabilities || [];
+  if (typeof vulns === 'string') {
+    try { vulns = JSON.parse(vulns); } catch(e) { vulns = []; }
+  }
+  if (vulns && vulns.length) {
+    vulns.sort(function(a,b) { var order = {critical:0, medium:1, low:2}; return (order[a.severity]||3) - (order[b.severity]||3); });
+    var counts = {critical:0, medium:0, low:0};
+    vulns.forEach(function(v) { if (counts[v.severity] !== undefined) counts[v.severity]++; });
+    document.getElementById('vulnCounts').innerHTML = ['critical','medium','low'].filter(function(s) { return counts[s] > 0; }).map(function(s) { return '<span class="vuln-count-badge '+s+'">'+counts[s]+' '+s+'</span>'; }).join('');
+    document.getElementById('vulnList').innerHTML = vulns.map(function(v) { return '<div class="vuln-item '+(v.severity||'low')+'"><span class="vuln-badge">'+(v.severity||'low')+'</span><span class="vuln-desc">'+esc(v.description||'')+'</span></div>'; }).join('');
+    show('vulnSection');
+    hide('noVulns');
+  } else if (data.overall !== null) {
+    hide('vulnSection');
+    show('noVulns');
+  }
+}
+
+function setScore(numId, barId, score) {
+  var cls = gradeClass(score);
+  document.getElementById(numId).textContent = score;
+  document.getElementById(numId).className = 'score-num ' + cls;
+  document.getElementById(barId).style.width = score + '%';
+  document.getElementById(barId).className = 'score-bar-fill ' + cls;
+}
+
+function clearResult() {
+  hide('resultCard');
+  hide('verdictBadge');
+  hide('summaryText');
+  hide('noVulns');
+  hide('progressCard');
+}
+
+function showLog() { show('logCard'); document.getElementById('log').innerHTML = ''; }
+function clearLog() { document.getElementById('log').innerHTML = ''; hide('logCard'); }
+function appendLog(text) {
+  var box = document.getElementById('log');
+  var line = document.createElement('div');
+  line.textContent = text;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
+
+function setScoring(on) {
+  document.getElementById('scoreBtn').disabled = on;
+  document.getElementById('scoreBtn').innerHTML = on ? '<div class="spinner"></div> Scoring…' : 'Score Contract';
+}
+
+function showError(msg) {
+  var el = document.getElementById('errorNotice');
+  el.innerHTML = '<span>✕</span><span>' + esc(msg) + '</span>';
+  el.classList.remove('hidden');
+}
+function hideError() { hide('errorNotice'); }
 </script>
 </body>
 </html>
