@@ -172,18 +172,24 @@ app.get('/api/status/:txHash', async (req, res) => {
     if (done) {
       console.log('Transaction finalized, reading contract...');
       const account = createAccount(process.env.PRIVATE_KEY);
-      console.log('Reading with address:', address, 'arg:', account.address, typeof account.address);
+      const queryAddr = String(account.address);
+      console.log('Reading get_latest_audit for:', queryAddr);
       try {
         const raw = await client.readContract({
           address,
           functionName: 'get_latest_audit',
-          args: [String(account.address)],
+          args: [queryAddr],
         });
         console.log('Contract read result:', raw);
         return res.json({ status, done: true, result: parseScoreResult(raw) });
       } catch (readErr) {
-        console.error('Read contract error:', readErr.message);
-        return res.json({ status, done: true, error: 'Failed to read result: ' + readErr.message });
+        const errMsg = readErr.message || String(readErr);
+        console.error('Read error:', errMsg);
+        // Check if it's "no audits" - return empty result
+        if (errMsg.includes('No audits found')) {
+          return res.json({ status, done: true, result: { overall: null, quality: null, security: null, summary: 'No audits yet', vulnerabilities: [] } });
+        }
+        return res.json({ status, done: true, error: 'Read failed: ' + errMsg });
       }
     }
 
