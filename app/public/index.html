@@ -6,23 +6,8 @@
   <title>GenLayer Contract Scorer</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #0f172a;
-      --surface: #1e293b;
-      --raised: #293548;
-      --border: #334155;
-      --primary: #6366f1;
-      --primary-dim: rgba(99,102,241,.12);
-      --text: #f1f5f9;
-      --muted: #94a3b8;
-      --good: #22c55e;
-      --warn: #eab308;
-      --bad: #ef4444;
-      --mono: 'Cascadia Code','Fira Code','Consolas',monospace;
-      --sans: 'Segoe UI',system-ui,-apple-system,sans-serif;
-      --r: 8px;
-    }
-    body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.5; min-height: 100vh; }
+    :root { --bg: #0f172a; --surface: #1e293b; --raised: #293548; --border: #334155; --primary: #6366f1; --primary-dim: rgba(99,102,241,.12); --text: #f1f5f9; --muted: #94a3b8; --good: #22c55e; --warn: #eab308; --bad: #ef4444; --mono: 'Cascadia Code','Fira Code','Consolas',monospace; --sans: 'Segoe UI',system-ui,-apple-system,sans-serif; --r: 8px; }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; min-height: 100vh; }
     header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 28px; display: flex; align-items: center; gap: 12px; }
     .logo { width: 34px; height: 34px; background: var(--primary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
     header h1 { font-size: 16px; font-weight: 600; }
@@ -98,8 +83,8 @@
   </div>
   <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--primary-dim);color:#a5b4fc;border:1px solid rgba(99,102,241,.25)">v0.3.0 SDK</span>
   <div class="header-right">
-    <button class="btn btn-ghost btn-sm" id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
-    <span class="hidden" id="walletAddr" style="font-size:11px;font-family:var(--mono);padding:4px 10px;border-radius:4px;background:var(--raised);color:var(--text)"></span>
+    <button class="btn btn-ghost btn-sm" id="connectBtn" onclick="window.connectWallet()">Connect Wallet</button>
+    <span class="hidden" id="walletAddr"></span>
   </div>
 </header>
 
@@ -110,10 +95,10 @@
     <div class="card-title">Contract Source Code</div>
     <textarea id="sourceCode" placeholder="Paste the full source code of the contract you want to audit…"></textarea>
     <div class="toolbar">
-      <button class="btn btn-primary" id="scoreBtn" onclick="scoreContract()">Score Contract</button>
-      <button class="btn btn-ghost btn-sm" onclick="loadExample()">Load example (bank_vault.py)</button>
-      <button class="btn btn-ghost btn-sm hidden" id="refreshBtn" onclick="refreshResult()">↻ Refresh result</button>
-      <button class="btn btn-ghost btn-sm" id="historyBtn" onclick="loadHistory()">📋 History</button>
+      <button class="btn btn-primary" id="scoreBtn" onclick="window.scoreContract()">Score Contract</button>
+      <button class="btn btn-ghost btn-sm" onclick="window.loadExample()">Load example</button>
+      <button class="btn btn-ghost btn-sm hidden" id="refreshBtn" onclick="window.refreshResult()">↻ Refresh</button>
+      <button class="btn btn-ghost btn-sm" id="historyBtn" onclick="window.loadHistory()">📋 History</button>
       <span id="auditCount"></span>
     </div>
   </div>
@@ -121,7 +106,7 @@
   <div class="card hidden" id="logCard">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <div class="card-title" style="margin:0">Output</div>
-      <button class="btn btn-ghost btn-sm" onclick="clearLog()">Clear</button>
+      <button class="btn btn-ghost btn-sm" onclick="window.clearLog()">Clear</button>
     </div>
     <div class="log" id="log"></div>
   </div>
@@ -131,21 +116,9 @@
     <div id="verdictBadge" class="verdict hidden"></div>
     <div class="summary-text hidden" id="summaryText"></div>
     <div class="scores" id="scoresGrid">
-      <div class="score-card">
-        <div class="score-label">Overall</div>
-        <div class="score-num" id="sOverall">—</div>
-        <div class="score-bar-track"><div class="score-bar-fill" id="bOverall" style="width:0%"></div></div>
-      </div>
-      <div class="score-card">
-        <div class="score-label">Code Quality</div>
-        <div class="score-num" id="sQuality">—</div>
-        <div class="score-bar-track"><div class="score-bar-fill" id="bQuality" style="width:0%"></div></div>
-      </div>
-      <div class="score-card">
-        <div class="score-label">Security</div>
-        <div class="score-num" id="sSecurity">—</div>
-        <div class="score-bar-track"><div class="score-bar-fill" id="bSecurity" style="width:0%"></div></div>
-      </div>
+      <div class="score-card"><div class="score-label">Overall</div><div class="score-num" id="sOverall">—</div><div class="score-bar-track"><div class="score-bar-fill" id="bOverall" style="width:0%"></div></div></div>
+      <div class="score-card"><div class="score-label">Quality</div><div class="score-num" id="sQuality">—</div><div class="score-bar-track"><div class="score-bar-fill" id="bQuality" style="width:0%"></div></div></div>
+      <div class="score-card"><div class="score-label">Security</div><div class="score-num" id="sSecurity">—</div><div class="score-bar-track"><div class="score-bar-fill" id="bSecurity" style="width:0%"></div></div></div>
     </div>
     <div id="vulnSection">
       <div class="vuln-header">
@@ -159,283 +132,189 @@
 
   <div class="card hidden" id="historyCard">
     <div class="card-title">Audit History</div>
-    <div class="history-list" id="historyList">
-      <div style="color:var(--muted);font-size:13px">No audits yet.</div>
-    </div>
+    <div class="history-list" id="historyList"></div>
   </div>
 </div>
 
 <script>
-const CONTRACT_ADDRESS = '0x8c4eD32C437246148d295ca0c4950E51c5CD3469';
+// Store everything on window
+(function() {
+  window.CONTRACT_ADDRESS = '0x8c4eD32C437246148d295ca0c4950E51c5CD3469';
+  window.walletAddress = null;
+  window.pollTimer = null;
 
-let walletAddress = null;
-let pollTimer = null;
-
-// Use global fetch from viem via eval to load genlayer-js
-async function createClient(config) {
-  // We'll use a simpler approach - calls directly via RPC
-  return {
-    config,
-    readClient: config,
-    writeClient: config
+  // Connect wallet
+  window.connectWallet = async function() {
+    try {
+      if (!window.ethereum) throw new Error('No wallet found. Install MetaMask.');
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      if (accounts.length === 0) throw new Error('No account found');
+      
+      window.walletAddress = accounts[0];
+      document.getElementById('connectBtn').classList.add('hidden');
+      const addrEl = document.getElementById('walletAddr');
+      addrEl.textContent = accounts[0].slice(0, 6) + '...' + accounts[0].slice(-4);
+      addrEl.classList.remove('hidden');
+      window.hideError();
+    } catch (err) {
+      window.showError(err.message);
+    }
   };
-}
 
-async function checkWallet() {
-  if (window.ethereum) {
-    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-    if (accounts.length > 0) {
-      setWallet(accounts[0]);
+  // Load example
+  window.loadExample = async function() {
+    try {
+      const res = await fetch('/api/example');
+      if (!res.ok) throw new Error('Could not load example');
+      const { content } = await res.json();
+      document.getElementById('sourceCode').value = content;
+      window.hideError();
+    } catch (err) {
+      window.showError(err.message);
     }
-  }
-}
+  };
 
-function setWallet(address) {
-  walletAddress = address;
-  document.getElementById('connectBtn').classList.add('hidden');
-  const addrEl = document.getElementById('walletAddr');
-  addrEl.textContent = address.slice(0, 6) + '...' + address.slice(-4);
-  addrEl.classList.remove('hidden');
-}
+  // Score contract
+  window.scoreContract = async function() {
+    const sourceCode = document.getElementById('sourceCode').value.trim();
+    if (!sourceCode) return window.showError('Paste some source code first.');
+    if (!window.walletAddress) return window.showError('Connect your wallet first.');
 
-async function connectWallet() {
-  try {
-    if (!window.ethereum) {
-      showError('No wallet found. Please install MetaMask.');
-      return;
-    }
-    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    if (accounts.length > 0) {
-      setWallet(accounts[0]);
-      hideError();
-    }
-  } catch (err) {
-    showError('Failed to connect wallet: ' + err.message);
-  }
-}
+    window.hideError();
+    window.clearResult();
+    window.showLog();
+    window.setScoring(true);
+    if (window.pollTimer) clearInterval(window.pollTimer);
 
-async function rpcCall(method, params) {
-  const response = await fetch('https://studio.genlayer.com/api', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      jsonrpc: '2.0',
-      method,
-      params,
-      id: 1
-    })
-  });
-  return response.json();
-}
-
-async function loadExample() {
-  try {
-    const res = await fetch('/api/example');
-    if (!res.ok) return showError('Could not load example file.');
-    const { content } = await res.json();
-    document.getElementById('sourceCode').value = content;
-    hideError();
-  } catch (err) {
-    showError('Failed to load example: ' + err.message);
-  }
-}
-
-async function scoreContract() {
-  const sourceCode = document.getElementById('sourceCode').value.trim();
-  if (!sourceCode) return showError('Paste some source code first.');
-  if (!walletAddress) return showError('Please connect your wallet first.');
-
-  showError('Scoring is handled via backend. Click Score Contract to continue.');
-  
-  // Make request to backend
-  try {
-    const res = await fetch('/api/score', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sourceCode, walletAddress }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      showError(data.error || 'Failed to submit');
-      return;
-    }
-    const { txHash } = data;
-    appendLog('→ Transaction submitted: ' + txHash);
-    appendLog('→ Polling for status…');
-    
-    let lastStatus = null;
-    const poll = async () => {
-      try {
-        const r = await fetch('/api/status/' + txHash + '?walletAddress=' + walletAddress);
+    try {
+      const res = await fetch('/api/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourceCode: sourceCode })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      
+      window.appendLog('→ TX: ' + data.txHash);
+      window.appendLog('→ Polling…');
+      
+      const poll = async function() {
+        const r = await fetch('/api/status/' + data.txHash);
         const result = await r.json();
-        if (result.status !== lastStatus) {
-          appendLog('  status: ' + result.status);
-          lastStatus = result.status;
-        }
         if (result.done) {
-          clearInterval(pollTimer);
+          clearInterval(window.pollTimer);
           if (result.error) {
-            showError(result.error);
+            window.showError(result.error);
           } else if (result.result) {
-            appendLog('→ Transaction accepted.');
-            renderResult(result.result);
+            window.appendLog('→ Done!');
+            window.renderResult(result.result);
           }
-          setScoring(false);
+          window.setScoring(false);
         }
-      } catch (e) {
-        clearInterval(pollTimer);
-        showError('Error: ' + e.message);
-        setScoring(false);
-      }
-    };
-    poll();
-    pollTimer = setInterval(poll, 4000);
-  } catch (err) {
-    showError(err.message || String(err));
-    setScoring(false);
-  }
-}
-
-function encodeContractCall(functionName, args) {
-  // Simple encoding - for genlayer contracts this is contract-specific
-  // We'll use the function selector + args as encoded data
-  // This is a simplified version - in production you'd use proper ABI encoding
-  const funcSig = functionName + '(' + args.map((_, i) => 'string').join(',') + ')';
-  const hash = simpleHash(funcSig);
-  const data = args.map(arg => {
-    const hex = toHex(arg);
-    return '0000000000000000000000000000000000000000000000000000000000000000'.slice(-hex.length) + hex;
-  }).join('');
-  return hash.slice(0, 8) + data;
-}
-
-function simpleHash(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return ('0000000' + Math.abs(hash).toString(16)).slice(-8);
-}
-
-function toHex(value) {
-  if (typeof value === 'string') {
-    // Convert string to hex manually
-    let hex = '';
-    for (let i = 0; i < value.length; i++) {
-      hex += value.charCodeAt(i).toString(16).padStart(2, '0');
+      };
+      poll();
+      window.pollTimer = setInterval(poll, 4000);
+    } catch (err) {
+      window.showError(err.message);
+      window.setScoring(false);
     }
-    return '0000000000000000000000000000000000000000000000000000000000000'.slice(0, 64 - hex.length) + hex;
+  };
+
+  window.refreshResult = function() {
+    // Refresh would call backend
+  };
+
+  window.loadHistory = function() {
+    if (!window.walletAddress) return window.showError('Connect wallet first.');
+    window.hideError();
+    window.show('historyCard');
+    document.getElementById('historyList').innerHTML = '<div style="color:var(--muted)">History will show here after audits.</div>';
+  };
+
+  window.renderResult = function(data) {
+    window.show('resultCard');
+    if (data.summary) {
+      document.getElementById('summaryText').textContent = data.summary;
+      window.show('summaryText');
+    }
+    if (data.overall !== null) {
+      window.setScore('sOverall', 'bOverall', data.overall);
+      window.setScore('sQuality', 'bQuality', data.quality);
+      window.setScore('sSecurity', 'bSecurity', data.security);
+      window.show('scoresGrid');
+      const cls = window.gradeClass(data.overall);
+      const labels = { good: '✓ Looks Good', mid: '⚠ Needs Attention', bad: '✕ High Risk' };
+      const badge = document.getElementById('verdictBadge');
+      badge.textContent = labels[cls];
+      badge.className = 'verdict ' + cls;
+      window.show('verdictBadge');
+    }
+  };
+
+  window.setScore = function(numId, barId, score) {
+    const cls = window.gradeClass(score);
+    document.getElementById(numId).textContent = score;
+    document.getElementById(numId).className = 'score-num ' + cls;
+    document.getElementById(barId).style.width = score + '%';
+    document.getElementById(barId).className = 'score-bar-fill ' + cls;
+  };
+
+  window.gradeClass = function(score) {
+    return score >= 70 ? 'good' : score >= 40 ? 'mid' : 'bad';
+  };
+
+  window.clearResult = function() {
+    window.hide('resultCard');
+    window.hide('verdictBadge');
+    window.hide('summaryText');
+    window.hide('noVulns');
+  };
+
+  window.showLog = function() {
+    window.show('logCard');
+    document.getElementById('log').innerHTML = '';
+  };
+
+  window.clearLog = function() {
+    document.getElementById('log').innerHTML = '';
+    window.hide('logCard');
+  };
+
+  window.appendLog = function(text) {
+    const box = document.getElementById('log');
+    const line = document.createElement('div');
+    line.textContent = text;
+    box.appendChild(line);
+    box.scrollTop = box.scrollHeight;
+  };
+
+  window.setScoring = function(on) {
+    const btn = document.getElementById('scoreBtn');
+    btn.disabled = on;
+    btn.innerHTML = on ? '<div class="spinner"></div> Scoring…' : 'Score Contract';
+  };
+
+  window.showError = function(msg) {
+    const el = document.getElementById('errorNotice');
+    el.innerHTML = '<span>✕</span><span>' + window.esc(msg) + '</span>';
+    el.classList.remove('hidden');
+  };
+
+  window.hideError = function() {
+    window.hide('errorNotice');
+  };
+
+  window.show = function(id) { document.getElementById(id).classList.remove('hidden'); };
+  window.hide = function(id) { document.getElementById(id).classList.add('hidden'); };
+  window.esc = function(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+
+  // Init - check if wallet already connected
+  if (window.ethereum) {
+    window.ethereum.request({ method: 'eth_accounts' }).then(function(accounts) {
+      if (accounts.length > 0) window.connectWallet();
+    });
   }
-  return '0000000000000000000000000000000000000000000000000000' + value.toString(16);
-}
-  return '0000000000000000000000000000000000000000000000000000' + value.toString(16);
-}
-
-async function loadLatestAudit() {
-  if (!walletAddress) return;
-  try {
-    // Call get_my_audits via RPC
-    const result = await rpcCall('eth_call', [{
-      to: CONTRACT_ADDRESS,
-      data: '0x' + simpleHash('get_my_audits()')
-    }, 'latest']);
-    
-    // Parse result - simplified
-    document.getElementById('auditCount').textContent = '';
-    hide('resultCard');
-  } catch (err) {
-    console.log('Error loading audit:', err.message);
-  }
-}
-
-async function refreshResult() {
-  await loadLatestAudit();
-}
-
-async function loadHistory() {
-  if (!walletAddress) return showError('Please connect your wallet first.');
-  hideError();
-  show('historyCard');
-  document.getElementById('historyList').innerHTML = '<div style="color:var(--muted);font-size:13px">History not available in this version.</div>';
-}
-
-function renderResult(data) {
-  show('resultCard');
-  if (data.summary) {
-    document.getElementById('summaryText').textContent = data.summary;
-    show('summaryText');
-  } else {
-    hide('summaryText');
-  }
-  if (data.overall !== null) {
-    setScore('sOverall', 'bOverall', data.overall);
-    setScore('sQuality', 'bQuality', data.quality);
-    setScore('sSecurity', 'bSecurity', data.security);
-    show('scoresGrid');
-  }
-}
-
-function setScore(numId, barId, score) {
-  const cls = gradeClass(score);
-  document.getElementById(numId).textContent = score;
-  document.getElementById(numId).className = 'score-num ' + cls;
-  document.getElementById(barId).style.width = score + '%';
-  document.getElementById(barId).className = 'score-bar-fill ' + cls;
-}
-
-function gradeClass(score) {
-  return score >= 70 ? 'good' : score >= 40 ? 'mid' : 'bad';
-}
-
-function clearResult() {
-  hide('resultCard');
-  hide('verdictBadge');
-  hide('summaryText');
-  hide('noVulns');
-}
-
-function showLog() {
-  show('logCard');
-  document.getElementById('log').innerHTML = '';
-}
-
-function clearLog() {
-  document.getElementById('log').innerHTML = '';
-  hide('logCard');
-}
-
-function appendLog(text) {
-  const box = document.getElementById('log');
-  const line = document.createElement('div');
-  line.textContent = text;
-  box.appendChild(line);
-  box.scrollTop = box.scrollHeight;
-}
-
-function setScoring(on) {
-  const btn = document.getElementById('scoreBtn');
-  btn.disabled = on;
-  btn.innerHTML = on ? '<div class="spinner"></div> Scoring…' : 'Score Contract';
-}
-
-function showError(msg) {
-  const el = document.getElementById('errorNotice');
-  el.innerHTML = '<span>✕</span><span>' + esc(msg) + '</span>';
-  el.classList.remove('hidden');
-}
-
-function hideError() {
-  hide('errorNotice');
-}
-
-function show(id) { document.getElementById(id).classList.remove('hidden'); }
-function hide(id) { document.getElementById(id).classList.add('hidden'); }
-function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-// Initialize
-checkWallet();
+})();
 </script>
 </body>
 </html>
